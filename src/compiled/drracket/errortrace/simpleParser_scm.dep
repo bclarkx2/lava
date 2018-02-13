@@ -1,1 +1,0 @@
-("6.11" ("83a89f72139524e9a7ddba3abee25a12beb25503" . "3196788f058c5278e12d37c95d45220c07ecc12f") #"C:\\Users\\Danny\\Documents\\Schoolwork\\Spring 2018\\PLC\\Interpreter Project\\interpreter\\src\\lex.scm" (collects #"errortrace" #"errortrace-key.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
