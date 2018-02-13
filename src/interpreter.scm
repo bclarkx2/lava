@@ -10,3 +10,20 @@
   'hey
  )
 )
+
+(define M.value.int
+  (lambda (e)
+    (cond
+      ((number? e) e)
+      ((eq? '+ (operator e)) (+ (M.value.int(cadr e)) (M.value.int(caddr e))))
+      ((eq? '- (operator e)) (- (M.value.int(cadr e)) (M.value.int(caddr e))))
+      ((eq? '* (operator e)) (* (M.value.int(cadr e)) (M.value.int(caddr e))))
+      ((eq? '/ (operator e)) (quotient (M.value.int(cadr e)) (M.value.int(caddr e))))
+      ((eq? '% (operator e)) (remainder (M.value.int(cadr e)) (M.value.int(caddr e))))
+      ((else (error 'badop "Undefine operator"))))))
+
+
+;example abstraction
+(define operator
+  (lambda (e)
+    (car e)))
