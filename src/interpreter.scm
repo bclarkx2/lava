@@ -25,7 +25,7 @@
       (else (error 'badop "Undefine operator")))))
 
 
-;example abstraction
+;abstract ideas in the above by defining little things like this
 (define operator
   (lambda (e)
     (car e)))
