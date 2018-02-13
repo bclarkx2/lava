@@ -4,6 +4,8 @@
 ;; Kaius Reed
 
 #lang racket
+(provide (all-defined-out))
+(require "simpleParser.scm")
 
 (define interpret
  (lambda (filename)
@@ -20,7 +22,7 @@
       ((eq? '* (operator e)) (* (M.value.int(cadr e)) (M.value.int(caddr e))))
       ((eq? '/ (operator e)) (quotient (M.value.int(cadr e)) (M.value.int(caddr e))))
       ((eq? '% (operator e)) (remainder (M.value.int(cadr e)) (M.value.int(caddr e))))
-      ((else (error 'badop "Undefine operator"))))))
+      (else (error 'badop "Undefine operator")))))
 
 
 ;example abstraction
