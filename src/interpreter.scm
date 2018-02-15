@@ -65,3 +65,15 @@
 (define keyword
  (lambda (stmt) (car stmt)))
 
+
+;; Assignment
+
+(define state.assign
+ (lambda (stmt s)
+  (state.add-binding
+   (varname stmt)
+   (value stmt s)
+   (state.remove-binding (varname stmt) s))))
+
+(define varname
+ (lambda (stmt) (cadr stmt)))
