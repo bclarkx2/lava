@@ -54,11 +54,12 @@
 (define state
  (lambda (stmt s)
   (cond
-   ((null? stmt) s)
 
-   ; return statements do not alter state
+   ; null and return statements do not alter state
+   ((null? stmt) s)
    ((eq? (keyword stmt) 'return) s)
 
+   ; remaining operations delegated to helpers
    ((eq? (keyword stmt) '=) (state.assign stmt s))
    ((eq? (keyword stmt) 'if) (state.if stmt s))
    ((eq? (keyword stmt) 'var) (state.var stmt s))
