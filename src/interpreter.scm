@@ -13,6 +13,9 @@
  )
 )
 
+(define value
+ (lambda (a) '()))
+
 (define M.value.int
   (lambda (e)
     (cond
@@ -29,3 +32,36 @@
 (define operator
   (lambda (e)
     (car e)))
+
+
+;;; Bindings
+
+(define state.add-binding
+ (lambda (a b c) '()))
+
+(define state.remove-binding
+ (lambda (a b c) '()))
+
+;;; State Mappings
+
+(define state
+ (lambda (stmt s)
+  (cond
+   ((null? stmt) s)
+
+   ; return statements do not alter state
+   ((eq? (keyword stmt) 'return) s)
+
+   ((eq? (keyword stmt) '=) (state.assign stmt s))
+   ((eq? (keyword stmt) 'if) (state.if stmt s))
+   ((eq? (keyword stmt) 'var) (state.var stmt s))
+   ((eq? (keyword stmt) 'while) (state.while stmt s))
+
+   (else s)
+  )
+ )
+)
+
+(define keyword
+ (lambda (stmt) (car stmt)))
+
