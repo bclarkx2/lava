@@ -1,0 +1,87 @@
+#! /usr/bin/env bash
+
+# starting question
+if [[ $1 == "-h" ]] || [[ $1 == "--help" ]] ; then
+    printf \
+"Test harness for Scheme unit tests.
+Usage: ./run-tests -q <question_num>
+Usage: ./run-tests <UUT> <test_file>\n"
+    exit 0
+elif [[ $2 == "-q" ]] ; then
+    test_file=$1
+    question_num=$3
+    stopping_num=$(($question_num + 1))
+else
+    test_file=$1
+    question_num=1
+    stopping_num=-1
+fi
+
+# test info
+printf "\n"
+printf "Test: %s\n" $test_file
+
+# colorss
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+reset=$(tput sgr0)
+
+
+test_exists=0
+question_exists=0
+
+overall_pass=true
+num_pass=0
+num_fail=0
+
+while [[ $question_exists -eq 0 ]] &&
+      [[ $question_num -ne $stopping_num ]] ;
+do
+
+    printf "\n=============\n"
+
+    test_num=1
+    while [[ $test_exists -eq 0 ]] ;
+    do
+        result=$(racket -e "(require \"$test_file\")
+                            (test-$question_num-$test_num)" \
+                      2>/dev/null)
+        test_exists=$?
+
+        if [[ test_exists -eq 0 ]] ; then
+            if [[ "$result" == "#f" ]] ; then
+                format_result="${red}$result${reset}"
+                overall_pass=false
+                ((num_fail++))
+            else
+                format_result="${green}$result${reset}"
+                ((num_pass++))
+            fi
+            echo "test-$question_num-$test_num: $format_result"
+            ((test_num++))
+        fi
+
+    done
+
+    # if the first didn't exist, the question doesn't exist
+    if [[ $test_num -eq 1 ]] ; then
+        question_exists=1
+
+    # otherwise, go to next question
+    else
+        ((question_num++))
+        ((test_exists=0))
+    fi
+
+done
+
+case $overall_pass in
+    true)
+        printf "Overall: ${green}pass${reset}" ;;
+    false)
+        printf "Overall: ${red}fail${reset}" ;;
+esac
+
+percent=$(bc -l <<< "scale=1; 100 * $num_pass / ($num_pass + $num_fail)")
+
+printf " ($percent%%)\n\n"
