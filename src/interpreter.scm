@@ -77,3 +77,17 @@
 
 (define varname
  (lambda (stmt) (cadr stmt)))
+
+
+;; If
+
+(define state.if
+ (lambda (stmt s)
+  (if (value (condition stmt))
+   (state (stmt1 stmt) s))
+   (state (stmt2 stmt) s)))
+
+(define condition (lambda (stmt) (car stmt)))
+(define stmt1 (lambda (stmt) (cadr stmt)))
+(define stmt2 (lambda (stmt) (caddr stmt)))
+
