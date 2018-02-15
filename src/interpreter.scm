@@ -105,5 +105,20 @@
 (define has-initialization
  (lambda (stmt) (not (null? (initialization stmt)))))
 
-(define intialization
+(define initialization
+ (lambda (stmt) (caddr stmt)))
+
+
+;; While
+
+(define state.while
+ (lambda (stmt s) s
+  (if (value (condition stmt))
+   (state stmt
+    (state (loopbody stmt)
+     (state (condition stmt)
+      s)))
+   (state (condition stmt) s))))
+
+(define loopbody
  (lambda (stmt) (caddr stmt)))
