@@ -4,9 +4,12 @@
 if [[ $1 == "-h" ]] || [[ $1 == "--help" ]] ; then
     printf \
 "Test harness for Scheme unit tests.
-Usage: ./run-tests -q <question_num>
-Usage: ./run-tests <UUT> <test_file>\n"
+Usage: ./run-tests <test_file>
+Usage: ./run-tests <test_file> -q <question_num>\n"
     exit 0
+elif [[ -z $1 ]] ; then
+    printf "Must supply test_file!\n"
+    exit 1
 elif [[ $2 == "-q" ]] ; then
     test_file=$1
     question_num=$3
