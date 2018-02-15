@@ -18,25 +18,80 @@
 ;;; Value
 
 (define value
- (lambda (a) '()))
-
-(define M.value.int
+ (lambda (stmt-list s)
+   (cond
+     ((null? stmt-list) '())
+     ((list? (car stmt-list))
+      (if (null? (value (car stmt-list) s))
+          (value (cdr stmt-list) (state (car stmt-list) s))
+          (value (car stmt-list) s)))
+     (else
+      (value.evaluate stmt-list)))))
+     
+ ;Mathematical Operators
+(define value.int
   (lambda (e)
     (cond
       ((number? e) e)
-      ((eq? '+ (operator e)) (+ (M.value.int(cadr e)) (M.value.int(caddr e))))
-      ((eq? '- (operator e)) (- (M.value.int(cadr e)) (M.value.int(caddr e))))
-      ((eq? '* (operator e)) (* (M.value.int(cadr e)) (M.value.int(caddr e))))
-      ((eq? '/ (operator e)) (quotient (M.value.int(cadr e)) (M.value.int(caddr e))))
-      ((eq? '% (operator e)) (remainder (M.value.int(cadr e)) (M.value.int(caddr e))))
-      (else (error 'badop "Undefine operator")))))
+      ((eq? '+ (operator e)) (+ (value.int(operand1 e)) (value.int(operand2 e))))
+      ((and (eq? '- (operator e)) (unary? e))
+          (- 0 (value.int(operand1 e))))
+      ((eq? '- (operator e)) (- (value.int(operand1 e)) (value.int(operand2 e))))
+      ((eq? '* (operator e)) (* (value.int(operand1 e)) (value.int(operand2 e))))
+      ((eq? '/ (operator e)) (quotient (value.int(operand1 e)) (value.int(operand2 e))))
+      ((eq? '% (operator e)) (remainder (value.int(operand1 e)) (value.int(operand2 e))))
+      (else (error 'badop "Undefined operator")))))
+
+;Comparison and Boolean Operations
+(define value.bool
+  (lambda (e)
+    (cond
+      ((boolean? e) e)
+      ((number? e) e)
+      ((eq? 'true e) #t)
+      ((eq? 'false e) #f)
+      ((eq? '== (operator e)) (eq? (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '!= (operator e)) (not (eq? (value.bool(operand1 e)) (value.bool(operand2 e)))))
+      ((eq? '> (operator e)) (> (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '< (operator e)) (< (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '>= (operator e)) (>= (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '<= (operator e)) (<= (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '&& (operator e)) (and (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '|| (operator e)) (or (value.bool(operand1 e)) (value.bool(operand2 e))))
+      ((eq? '! (operator e)) (not (value.bool(operand1 e))))
+      (else (error 'badop "Undefined operator")))))
+
+(define value.evaluate
+  (lambda (e)
+    (if (or  (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e)))
+        (value.int e)
+        (value.bool e))))
 
 
-;abstract ideas in the above by defining little things like this
+;abstractions for value
 (define operator
   (lambda (e)
     (car e)))
 
+;add lookup function here - if variable, lookup, else return atom
+(define operand1
+  (lambda (lis)
+    (if (or (number? (cadr lis)) (eq? 'true (cadr lis)) (eq? 'false (cadr lis)))
+        (cadr lis)
+    (state.lookup (cadr lis)))))
+
+;add lookup function here
+(define operand2
+  (lambda (lis)
+    (if (or (number? (caddr lis)) (eq? 'true (caddr lis)) (eq? 'false (caddr lis)))
+        (caddr lis)
+    (state.lookup (caddr lis)))))
+    
+
+(define unary?
+  (lambda (lis)
+    (if (pair? (cddr lis))#f
+        #t)))
 
 
 ;;; Bindings
@@ -46,6 +101,9 @@
 
 (define state.remove-binding
  (lambda (a b c) '()))
+
+(define state.lookup
+  (lambda (a) '()))
 
 
 
