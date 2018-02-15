@@ -84,12 +84,12 @@
 (define state.if
  (lambda (stmt s)
   (if (value (condition stmt))
-   (state (stmt1 stmt) s))
-   (state (stmt2 stmt) s)))
+   (state (stmt1 stmt) s)
+   (state (stmt2 stmt) s))))
 
-(define condition (lambda (stmt) (car stmt)))
-(define stmt1 (lambda (stmt) (cadr stmt)))
-(define stmt2 (lambda (stmt) (caddr stmt)))
+(define condition (lambda (stmt) (cadr stmt)))
+(define stmt1 (lambda (stmt) (caddr stmt)))
+(define stmt2 (lambda (stmt) (cadddr stmt)))
 
 
 ;; Var
