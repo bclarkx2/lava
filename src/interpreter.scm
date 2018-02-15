@@ -96,14 +96,14 @@
 
 (define state.var
  (lambda (stmt s)
-  (if (has-intialization stmt)
+  (if (has-initialization stmt)
    (state.add-binding
     (varname stmt) (value (initialization stmt)) s)
    (state.add-binding
     (varname stmt) '() s))))
 
 (define has-initialization
- (lambda (stmt) (not (null? (initial-value stmt)))))
+ (lambda (stmt) (not (null? (initialization stmt)))))
 
 (define intialization
  (lambda (stmt) (caddr stmt)))
