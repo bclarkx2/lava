@@ -13,6 +13,10 @@
  )
 )
 
+
+
+;;; Value
+
 (define value
  (lambda (a) '()))
 
@@ -34,6 +38,7 @@
     (car e)))
 
 
+
 ;;; Bindings
 
 (define state.add-binding
@@ -41,6 +46,8 @@
 
 (define state.remove-binding
  (lambda (a b c) '()))
+
+
 
 ;;; State Mappings
 
