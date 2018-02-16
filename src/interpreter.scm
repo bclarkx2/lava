@@ -26,46 +26,46 @@
           (value (cdr stmt-list) (state (car stmt-list) s))
           (value (car stmt-list) s)))
      (else
-      (value.evaluate stmt-list)))))
+      (value.evaluate stmt-list s)))))
      
  ;Mathematical Operators
 (define value.int
-  (lambda (e)
+  (lambda (e s)
     (cond
       ((number? e) e)
-      ((eq? '+ (operator e)) (+ (value.int(operand1 e)) (value.int(operand2 e))))
+      ((eq? '+ (operator e)) (+ (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       ((and (eq? '- (operator e)) (unary? e))
-          (- 0 (value.int(operand1 e))))
-      ((eq? '- (operator e)) (- (value.int(operand1 e)) (value.int(operand2 e))))
-      ((eq? '* (operator e)) (* (value.int(operand1 e)) (value.int(operand2 e))))
-      ((eq? '/ (operator e)) (quotient (value.int(operand1 e)) (value.int(operand2 e))))
-      ((eq? '% (operator e)) (remainder (value.int(operand1 e)) (value.int(operand2 e))))
+          (- 0 (value.int(operand1 e s) s)))
+      ((eq? '- (operator e)) (- (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
+      ((eq? '* (operator e)) (* (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
+      ((eq? '/ (operator e)) (quotient (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
+      ((eq? '% (operator e)) (remainder (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       (else (error 'badop "Undefined operator")))))
 
 ;Comparison and Boolean Operations
 (define value.bool
-  (lambda (e)
+  (lambda (e s)
     (cond
       ((boolean? e) e)
       ((number? e) e)
       ((eq? 'true e) #t)
       ((eq? 'false e) #f)
-      ((eq? '== (operator e)) (eq? (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '!= (operator e)) (not (eq? (value.bool(operand1 e)) (value.bool(operand2 e)))))
-      ((eq? '> (operator e)) (> (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '< (operator e)) (< (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '>= (operator e)) (>= (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '<= (operator e)) (<= (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '&& (operator e)) (and (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '|| (operator e)) (or (value.bool(operand1 e)) (value.bool(operand2 e))))
-      ((eq? '! (operator e)) (not (value.bool(operand1 e))))
+      ((eq? '== (operator e)) (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '!= (operator e)) (not (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s))))
+      ((eq? '> (operator e)) (> (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '< (operator e)) (< (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '>= (operator e)) (>= (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '<= (operator e)) (<= (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '&& (operator e)) (and (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '|| (operator e)) (or (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '! (operator e)) (not (value.bool(operand1 e s) s)))
       (else (error 'badop "Undefined operator")))))
 
 (define value.evaluate
-  (lambda (e)
+  (lambda (e s)
     (if (or  (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e)))
-        (value.int e)
-        (value.bool e))))
+        (value.int e s)
+        (value.bool e s))))
 
 
 ;abstractions for value
@@ -75,17 +75,21 @@
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
-  (lambda (lis)
-    (if (or (number? (cadr lis)) (eq? 'true (cadr lis)) (eq? 'false (cadr lis)))
-        (cadr lis)
-    (state.lookup (cadr lis)))))
+  (lambda (lis s)
+    (cond
+      ((list? (cadr lis)) (value (cadr lis) s))
+      ((if (or (number? (cadr lis)) (eq? 'true (cadr lis)) (eq? 'false (cadr lis)))
+           (cadr lis)
+           (state.lookup (cadr lis) s))))))
 
 ;add lookup function here
 (define operand2
-  (lambda (lis)
-    (if (or (number? (caddr lis)) (eq? 'true (caddr lis)) (eq? 'false (caddr lis)))
-        (caddr lis)
-    (state.lookup (caddr lis)))))
+  (lambda (lis s)
+    (cond
+      ((list? (caddr lis)) (value (caddr lis) s))
+      ((if (or (number? (caddr lis)) (eq? 'true (caddr lis)) (eq? 'false (caddr lis)))
+           (caddr lis)
+           (state.lookup (caddr lis) s))))))
     
 
 (define unary?
