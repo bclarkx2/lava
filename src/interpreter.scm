@@ -97,15 +97,38 @@
 ;;; Bindings
 
 (define state.add-binding
- (lambda (a b c) '()))
+ (lambda (var value s)
+   (if (null? (state.lookup var s))
+       (cons (list var value) s)
+       (state.add-binding var value (state.remove-binding var s)))))
+     
 
 (define state.remove-binding
- (lambda (a b c) '()))
+ (lambda (var s)
+   (cond
+     ((null? s) '())
+     ((eq? var (variable (mapping s))) (remaining s))
+     (else (cons (mapping s) (state.remove-binding var (remaining s)))))))
+       
 
 (define state.lookup
-  (lambda (a) '()))
+  (lambda (var s)
+    (cond
+      ((null? s) '())
+      ((eq? var (variable (mapping s))) (val (mapping s)))
+      (else (state.lookup var (remaining s))))))
 
+(define mapping
+  (lambda (vartable) (car vartable)))
 
+(define variable
+  (lambda (mapping) (car mapping)))
+
+(define val
+  (lambda (mapping) (cadr mapping)))
+
+(define remaining
+  (lambda (vartable) (cdr vartable)))
 
 ;;; State Mappings
 
