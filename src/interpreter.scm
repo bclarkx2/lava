@@ -9,10 +9,7 @@
 
 (define interpret
  (lambda (filename)
-  'hey
- )
-)
-
+  (value (parser filename) (state.empty))))
 
 
 ;;; Value
