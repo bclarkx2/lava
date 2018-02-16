@@ -97,6 +97,8 @@
 
 ;;; Bindings
 
+(define state.empty (lambda () '(() ())))
+
 (define state.add-binding
  (lambda (var value s)
    (if (null? (state.lookup var s))
