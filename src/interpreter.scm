@@ -190,10 +190,7 @@
    ((eq? (keyword stmt) 'var) (state.var stmt s))
    ((eq? (keyword stmt) 'while) (state.while stmt s))
 
-   (else s)
-  )
- )
-)
+   (else s))))
 
 (define keyword
  (lambda (stmt) (car stmt)))
