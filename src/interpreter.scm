@@ -70,7 +70,7 @@
     (if (list? e)
      (cond
       ((null? (cdr e)) (value.evaluate (car e) s))
-      ((interpreter-keyword? (operator e)) (value.statement (cdr e) s))
+      ((interpreter-keyword? (operator e)) (value.statement e s))
       ((int-operator? (operator e)) (value.int e s))
       ((bool-operator? (operator e)) (value.bool e s))
       (else (error 'badop "Undefined operator")))
