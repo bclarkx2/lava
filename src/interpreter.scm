@@ -29,6 +29,7 @@
 (define value.int
   (lambda (e s)
     (cond
+      ((number? e) e)
       ((number? (car e)) (car e))
       ((eq? '+ (operator e)) (+ (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       ((and (eq? '- (operator e)) (unary? e))
@@ -43,10 +44,6 @@
 (define value.bool
   (lambda (e s)
     (cond
-      ((boolean? e) e)
-      ((number? e) e)
-      ((eq? 'true e) #t)
-      ((eq? 'false e) #f)
       ((eq? '== (operator e)) (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
       ((eq? '!= (operator e)) (not (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s))))
       ((eq? '> (operator e)) (> (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
@@ -60,20 +57,19 @@
 
 (define value.evaluate
   (lambda (e s)
-    (cond
+    (if (list? e)
+     (cond
+      ((null? (cdr e)) (value.evaluate (car e) s))
       ((interpreter-keyword? (operator e)) '())
-      ((eq? 'return (operator e)) (value.return (cadr e) s))
+      ((eq? 'return (operator e)) (value.evaluate (cdr e) s))
       ((int-operator? (operator e)) (value.int e s))
-      (else (value.bool e s)))))
-
-(define value.return
-  (lambda (e s)
-    (cond
-      ((null? (car e)) '())
-      ((number? (car e)) (car e))
-      ((is-expression? e) (value.evaluate e s))
-      (else (state.lookup (car e) s)))))
-      
+      ((bool-operator? (operator e)) (value.bool e s))
+      (else (error 'badop "Undefined operator")))
+     (cond
+      ((number? e) e)
+      ((eq? 'true e) #t)
+      ((eq? 'false e) #f)
+      (else (state.lookup e s))))))      
 
 
 ;abstractions for value
@@ -89,9 +85,18 @@
       (eq? op '/) 
       (eq? op '%))))
 
-(define is-expression?
- (lambda (e)
-  (list? e)))
+(define bool-operator?
+ (lambda (op)
+  (or (eq? op '==)
+      (eq? op '!=)
+      (eq? op '>)
+      (eq? op '<)
+      (eq? op '>=)
+      (eq? op '<=)
+      (eq? op '&&)
+      (eq? op '||)
+      (eq? op '!))))
+
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
@@ -193,7 +198,7 @@
  (lambda (stmt s)
   (state.add-binding
    (varname stmt)
-   (value (cddr stmt) s)  ;value of the expression
+   (value.evaluate (caddr stmt) s)  ;value of the expression
    (state.remove-binding (varname stmt) s))))
 
 (define varname
@@ -204,7 +209,7 @@
 
 (define state.if
  (lambda (stmt s)
-  (if (value (condition stmt))
+  (if (value.evaluate (condition stmt) s)
    (state (stmt1 stmt) s)
    (state (stmt2 stmt) s))))
 
@@ -219,7 +224,7 @@
  (lambda (stmt s)
   (if (has-initialization stmt)
    (state.add-binding
-    (varname stmt) (value (car (initialization stmt))) s)
+    (varname stmt) (value.evaluate (car (initialization stmt)) s) s)
    (state.add-binding
     (varname stmt) '() s))))
 
@@ -234,7 +239,7 @@
 
 (define state.while
  (lambda (stmt s) s
-  (if (value (condition stmt))
+  (if (value.evaluate (condition stmt) s)
    (state stmt
     (state (loopbody stmt)
      (state (condition stmt)
