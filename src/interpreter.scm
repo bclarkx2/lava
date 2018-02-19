@@ -215,7 +215,11 @@
 
 (define condition (lambda (stmt) (cadr stmt)))
 (define stmt1 (lambda (stmt) (caddr stmt)))
-(define stmt2 (lambda (stmt) (cadddr stmt)))
+(define stmt2
+ (lambda (stmt)
+  (if (null? (cdddr stmt))
+    '()
+    (cadddr stmt))))
 
 
 ;; Var
