@@ -37,7 +37,7 @@
       ((eq? '* (operator e)) (* (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       ((eq? '/ (operator e)) (quotient (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       ((eq? '% (operator e)) (remainder (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
-      (else (error 'badop "Undefined operator")))))
+      (else (error 'badop "Undefined int operator")))))
 
 ;Comparison and Boolean Operations
 (define value.bool
@@ -56,7 +56,7 @@
       ((eq? '&& (operator e)) (and (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
       ((eq? '|| (operator e)) (or (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
       ((eq? '! (operator e)) (not (value.bool(operand1 e s) s)))
-      (else (error 'badop "Undefined operator")))))
+      (else (error 'badop "Undefined bool operator")))))
 
 (define value.evaluate
   (lambda (e s)
