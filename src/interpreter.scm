@@ -70,8 +70,7 @@
     (if (list? e)
      (cond
       ((null? (cdr e)) (value.evaluate (car e) s))
-      ((interpreter-keyword? (operator e)) '())
-      ((eq? 'return (operator e)) (value.return (cdr e) s))
+      ((interpreter-keyword? (operator e)) (value.statement (cdr e) s))
       ((int-operator? (operator e)) (value.int e s))
       ((bool-operator? (operator e)) (value.bool e s))
       (else (error 'badop "Undefined operator")))
@@ -80,14 +79,29 @@
       ((boolean? e) e)
       ((eq? 'true e) #t)
       ((eq? 'false e) #f)
-      (else (state.lookup e s))))))      
+      (else (state.lookup e s))))))
+
+(define value.statement
+  (lambda (stmt s)
+    (cond
+      ((eq? 'return (keyword stmt)) (value.return stmt s))
+      ((eq? 'if (keyword stmt)) (value.if stmt s))
+      (else '()))))
+
+;has a value if the chosen clause has a return statement
+(define value.if
+  (lambda (stmt s)
+    (if (value.evaluate (condition stmt) s)
+        (value (stmt1 stmt) s)
+        (value (stmt2 stmt) s))))
+    
 
 (define value.return
  (lambda (e s)
   (cond 
-   ((eq? (value.evaluate e s) #t) 'true)
-   ((eq? (value.evaluate e s) #f) 'false)
-   (else (value.evaluate e s)))))
+   ((eq? (value.evaluate (cdr e) s) #t) 'true)
+   ((eq? (value.evaluate (cdr e) s) #f) 'false)
+   (else (value.evaluate (cdr e) s)))))
 
 
 ;abstractions for value
@@ -133,7 +147,7 @@
 ;if the car of the lis is a program-defined keyword, we must execute the command
 (define interpreter-keyword?
   (lambda (atom)
-   (in? atom '(var = if while))))
+   (in? atom '(var = if while return))))
 
 
 ;;; Bindings
