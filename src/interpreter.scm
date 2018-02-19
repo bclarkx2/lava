@@ -60,9 +60,10 @@
 
 (define value.evaluate
   (lambda (e s)
-    (if (or  (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e)))
-        (value.int e s)
-        (value.bool e s))))
+    (cond
+      ((or  (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e))) (value.int e s)
+      ((or (eq? '&& (operator e)) (eq? '|| (operator e))) (value.bool e s)))
+      (else '()))))
 
 
 ;abstractions for value
@@ -102,36 +103,36 @@
 (define state.add-binding
  (lambda (var value s)
    (if (null? (state.lookup var s))
-       (cons (list var value) s)
+       (list (cons var (car s)) (cons value (cadr s)))
        (state.add-binding var value (state.remove-binding var s)))))
      
 
 (define state.remove-binding
  (lambda (var s)
    (cond
-     ((null? s) '())
-     ((eq? var (variable (mapping s))) (remaining s))
-     (else (cons (mapping s) (state.remove-binding var (remaining s)))))))
+     ((null? s) '(() ()))
+     ((eq? var (car (variables s))) (remaining s))
+     (else (list
+            (cons (car (variables s)) (car (state.remove-binding var (remaining s))))
+            (cons (car (var-values s)) (cadr (state.remove-binding var (remaining s)))))))))
        
 
 (define state.lookup
   (lambda (var s)
     (cond
-      ((null? s) '())
-      ((eq? var (variable (mapping s))) (val (mapping s)))
+      ((null? (variables s)) '())
+      ((eq? var (car (variables s))) (car (var-values s)))
       (else (state.lookup var (remaining s))))))
 
-(define mapping
+(define variables
   (lambda (vartable) (car vartable)))
 
-(define variable
-  (lambda (mapping) (car mapping)))
-
-(define val
-  (lambda (mapping) (cadr mapping)))
+(define var-values
+  (lambda (vartable) (cadr vartable)))
 
 (define remaining
-  (lambda (vartable) (cdr vartable)))
+  (lambda (vartable)
+    (list (cdr (car vartable)) (cdr (car (cdr vartable))))))
 
 ;;; State Mappings
 
@@ -190,7 +191,7 @@
  (lambda (stmt s)
   (if (has-initialization stmt)
    (state.add-binding
-    (varname stmt) (value (initialization stmt)) s)
+    (varname stmt) (value (car (initialization stmt))) s)
    (state.add-binding
     (varname stmt) '() s))))
 
@@ -198,7 +199,7 @@
  (lambda (stmt) (not (null? (initialization stmt)))))
 
 (define initialization
- (lambda (stmt) (caddr stmt)))
+ (lambda (stmt) (cddr stmt)))
 
 
 ;; While
