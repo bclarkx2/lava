@@ -44,12 +44,12 @@
 (define value.bool
   (lambda (e s)
     (cond
-      ((eq? '== (operator e)) (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
-      ((eq? '!= (operator e)) (not (eq? (value.bool(operand1 e s) s) (value.bool(operand2 e s) s))))
-      ((eq? '> (operator e)) (> (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
-      ((eq? '< (operator e)) (< (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
-      ((eq? '>= (operator e)) (>= (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
-      ((eq? '<= (operator e)) (<= (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
+      ((eq? '== (operator e)) (eq? (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '!= (operator e)) (not (eq? (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s))))
+      ((eq? '> (operator e)) (> (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '< (operator e)) (< (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '>= (operator e)) (>= (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '<= (operator e)) (<= (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
       ((eq? '&& (operator e)) (and (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
       ((eq? '|| (operator e)) (or (value.bool(operand1 e s) s) (value.bool(operand2 e s) s)))
       ((eq? '! (operator e)) (not (value.bool(operand1 e s) s)))
