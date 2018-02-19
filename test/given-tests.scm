@@ -48,9 +48,9 @@
   (equal? (interpret "given-files/10") -39)))
 
 ; <p>Test 11: This code should give an error (using before declaring).
-(define test-1-1
+(define test-1-11
  (lambda ()
-  (with-handlers
+  ;;; (with-handlers
   #f))
   ;;; (equal? (interpret "given-files/11") 'GARBAGE)))
 
