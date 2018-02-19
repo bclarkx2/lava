@@ -50,75 +50,79 @@
 ; <p>Test 11: This code should give an error (using before declaring).
 (define test-1-11
  (lambda ()
-  (equal? (interpret "given-tests/11") 'GARBAGE)))
+  #f))
+  ;;; (equal? (interpret "given-files/11") 'GARBAGE)))
 
 ; <p>Test 12: This code should give an error (using before declaring).
 (define test-1-12
  (lambda ()
-  (equal? (interpret "given-tests/12") 'GARBAGE)))
+  #f))
+  ;;; (equal? (interpret "given-files/12") 'GARBAGE)))
 
 ; <p>Test 13: This code should give an error (using before assigning).
 (define test-1-13
  (lambda ()
-  (equal? (interpret "given-tests/13") 'GARBAGE)))
+  #f))
+  ;;; (equal? (interpret "given-files/13") 'GARBAGE)))
 
 ; <p>Test 14: This code should give an error (redefining).  This is not a required error, but it would be nice if you could catch these.
 (define test-1-14
  (lambda ()
-  (equal? (interpret "given-tests/14") 'GARBAGE)))
+  #f))
+  ;;; (equal? (interpret "given-files/14") 'GARBAGE)))
 
 (define test-1-15
  (lambda ()
-  (equal? (interpret "given-tests/15") 'true)))
+  (equal? (interpret "given-files/15") 'true)))
 
 (define test-1-16
  (lambda ()
-  (equal? (interpret "given-tests/16") 100)))
+  (equal? (interpret "given-files/16") 100)))
 
 (define test-1-17
  (lambda ()
-  (equal? (interpret "given-tests/17") 'false)))
+  (equal? (interpret "given-files/17") 'false)))
 
 (define test-1-18
  (lambda ()
-  (equal? (interpret "given-tests/18") 'true)))
+  (equal? (interpret "given-files/18") 'true)))
 
 (define test-1-19
  (lambda ()
-  (equal? (interpret "given-tests/19") 128)))
+  (equal? (interpret "given-files/19") 128)))
 
 (define test-1-20
 (lambda ()
-(equal? (interpret "given-tests/20") 12)))
+(equal? (interpret "given-files/20") 12)))
 
 (define test-1-21
  (lambda ()
-  (equal? (interpret "given-tests/21") 30)))
+  (equal? (interpret "given-files/21") 30)))
 
 (define test-1-22
  (lambda ()
-  (equal? (interpret "given-tests/22") 11)))
+  (equal? (interpret "given-files/22") 11)))
 
 (define test-1-23
  (lambda ()
-  (equal? (interpret "given-tests/23") 1106)))
+  (equal? (interpret "given-files/23") 1106)))
 
 (define test-1-24
  (lambda ()
-  (equal? (interpret "given-tests/24") 12)))
+  (equal? (interpret "given-files/24") 12)))
 
 (define test-1-25
  (lambda ()
-  (equal? (interpret "given-tests/25") 16)))
+  (equal? (interpret "given-files/25") 16)))
 
 (define test-1-26
  (lambda ()
-  (equal? (interpret "given-tests/26") 72)))
+  (equal? (interpret "given-files/26") 72)))
 
 (define test-1-27
  (lambda ()
-  (equal? (interpret "given-tests/27") 21)))
+  (equal? (interpret "given-files/27") 21)))
 
 (define test-1-28
  (lambda ()
-  (equal? (interpret "given-tests/28") 164)))
+  (equal? (interpret "given-files/28") 164)))
