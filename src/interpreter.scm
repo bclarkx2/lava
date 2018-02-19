@@ -61,9 +61,9 @@
 (define value.evaluate
   (lambda (e s)
     (cond
-      ((keyword? (operator e)) '())
-      ((eq? 'return (operator e)) (value.return (cdr e) s))
-      ((or (number? (operator e)) (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e))) (value.int e s))
+      ((interpreter-keyword? (operator e)) '())
+      ((eq? 'return (operator e)) (value.return (cadr e) s))
+      ((int-operator? (operator e)) (value.int e s))
       (else (value.bool e s)))))
 
 (define value.return
@@ -71,6 +71,7 @@
     (cond
       ((null? (car e)) '())
       ((number? (car e)) (car e))
+      ((is-expression? e) (value.evaluate e s))
       (else (state.lookup (car e) s)))))
       
 
@@ -79,6 +80,18 @@
 (define operator
   (lambda (e)
     (car e)))
+
+(define int-operator?
+ (lambda (op)
+  (or (eq? op '+)
+      (eq? op '-) 
+      (eq? op '*) 
+      (eq? op '/) 
+      (eq? op '%))))
+
+(define is-expression?
+ (lambda (e)
+  (list? e)))
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
@@ -104,7 +117,7 @@
         #t)))
 
 ;if the car of the lis is a program-defined keyword, we must execute the command
-(define keyword?
+(define interpreter-keyword?
   (lambda (atom)
     (cond
       ((or (eq? 'var atom) (eq? '= atom) (eq? 'if atom) (eq? 'while atom)) #t)
