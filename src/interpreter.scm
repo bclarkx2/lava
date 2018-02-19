@@ -31,13 +31,13 @@
     (cond
       ((number? e) e)
       ((number? (car e)) (car e))
-      ((eq? '+ (operator e)) (+ (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
+      ((eq? '+ (operator e)) (+ (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
       ((and (eq? '- (operator e)) (unary? e))
-          (- 0 (value.int(operand1 e s) s)))
-      ((eq? '- (operator e)) (- (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
-      ((eq? '* (operator e)) (* (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
-      ((eq? '/ (operator e)) (quotient (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
-      ((eq? '% (operator e)) (remainder (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
+          (- 0 (value.evaluate(operand1 e s) s)))
+      ((eq? '- (operator e)) (- (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '* (operator e)) (* (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '/ (operator e)) (quotient (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '% (operator e)) (remainder (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
       (else (error 'badop "Undefined int operator")))))
 
 ;Comparison and Boolean Operations
