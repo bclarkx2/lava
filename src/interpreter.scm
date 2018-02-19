@@ -204,11 +204,15 @@
  (lambda (stmt s)
   (state.add-binding
    (varname stmt)
-   (value.evaluate (caddr stmt) s)  ;value of the expression
+   (value.evaluate (varexpr stmt) s)  ;value of the expression
    (state.remove-binding (varname stmt) s))))
 
 (define varname
  (lambda (stmt) (cadr stmt)))
+
+(define varexpr
+ (lambda (stmt) (caddr stmt)))
+  
 
 
 ;; If
