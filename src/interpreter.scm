@@ -76,7 +76,8 @@
  (lambda (e s)
   (cond 
    ((eq? (value.evaluate e s) #t) 'true)
-   ((eq? (value.evaluate e s) #f) 'false))))
+   ((eq? (value.evaluate e s) #f) 'false)
+   (else (value.evaluate e s)))))
 
 
 ;abstractions for value
