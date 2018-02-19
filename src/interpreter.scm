@@ -31,27 +31,27 @@
     (cond
       ((number? e) e)
       ((number? (car e)) (car e))
-      ((eq? '+ (operator e)) (+ (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
       ((and (eq? '- (operator e)) (unary? e))
           (- 0 (value.evaluate(operand1 e s) s)))
-      ((eq? '- (operator e)) (- (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '* (operator e)) (* (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '/ (operator e)) (quotient (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '% (operator e)) (remainder (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '+ (operator e)) (compute + e s))
+      ((eq? '- (operator e)) (compute - e s))
+      ((eq? '* (operator e)) (compute * e s))
+      ((eq? '/ (operator e)) (compute quotient e s))
+      ((eq? '% (operator e)) (compute remainder e s))
       (else (error 'badop "Undefined int operator")))))
 
 ;Comparison and Boolean Operations
 (define value.bool
   (lambda (e s)
     (cond
-      ((eq? '== (operator e)) (eq? (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '!= (operator e)) (not (eq? (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s))))
-      ((eq? '> (operator e)) (> (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '< (operator e)) (< (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '>= (operator e)) (>= (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '<= (operator e)) (<= (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '&& (operator e)) (and (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
-      ((eq? '|| (operator e)) (or (value.evaluate(operand1 e s) s) (value.evaluate(operand2 e s) s)))
+      ((eq? '== (operator e)) (compute eq? e s))
+      ((eq? '!= (operator e)) (compute (lambda (a b) (not (eq? a b))) e s))
+      ((eq? '> (operator e)) (compute > e s))
+      ((eq? '< (operator e)) (compute < e s))
+      ((eq? '>= (operator e)) (compute >= e s))
+      ((eq? '<= (operator e)) (compute <= e s))
+      ((eq? '&& (operator e)) (compute (lambda (a b) (and a b)) e s))
+      ((eq? '|| (operator e)) (compute (lambda (a b) (or a b)) e s))
       ((eq? '! (operator e)) (not (value.evaluate(operand1 e s) s)))
       (else (error 'badop "Undefined bool operator")))))
 
@@ -123,6 +123,10 @@
            (caddr lis)
            (state.lookup (caddr lis) s))))))
     
+(define compute
+ (lambda (op e s)
+  (op (value.evaluate(operand1 e s) s)
+      (value.evaluate(operand2 e s) s))))
 
 (define unary?
   (lambda (lis)
