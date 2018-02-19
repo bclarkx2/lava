@@ -157,15 +157,13 @@
 
 (define state.add-binding
   (lambda (var value s)
-    (if (in? var (variables s))
-        (list (cons var (car s)) (cons value (cadr s)))
-        (state.add-binding var value (state.remove-binding var s)))))
+    (list (cons var (car s)) (cons value (cadr s)))))
      
 
 (define state.remove-binding
   (lambda (var s)
     (cond
-      ((null? s) (state.empty))
+      ((equal? s (state.empty)) (state.empty))
       ((eq? var (car (variables s))) (remaining s))
       (else (list
              (cons (car (variables s)) (car (state.remove-binding var (remaining s))))
@@ -175,9 +173,11 @@
 (define state.lookup
   (lambda (var s)
     (cond
-      ((null? (variables s)) (raise 'illegal-var-dereferencing))
-      ((eq? var (car (variables s))) (car (var-values s)))
-      (else (state.lookup var (remaining s))))))
+      ((null? (variables s)) '())
+      ((eq? var (car (variables s)))
+       (if (null? (car (var-values s))) (raise 'illegal-var-dereferencing)
+           (car (var-values s))))
+       (else (state.lookup var (remaining s))))))
 
 (define variables
   (lambda (vartable) (car vartable)))
@@ -215,7 +215,7 @@
 
 (define state.assign
   (lambda (stmt s)
-    (if (in? (varname stmt) s)
+    (if (in? (varname stmt) (variables s))
     (state.add-binding
      (varname stmt)
      (value.evaluate (varexpr stmt) s)  ;value of the expression
