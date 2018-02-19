@@ -133,9 +133,7 @@
 ;if the car of the lis is a program-defined keyword, we must execute the command
 (define interpreter-keyword?
   (lambda (atom)
-    (cond
-      ((or (eq? 'var atom) (eq? '= atom) (eq? 'if atom) (eq? 'while atom)) #t)
-      (else #f))))
+   (in? atom '(var = if while))))
 
 
 ;;; Bindings
