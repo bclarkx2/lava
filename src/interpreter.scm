@@ -12,6 +12,16 @@
   (value (parser filename) (state.empty))))
 
 
+;;; General helpers
+
+(define in?
+ (lambda (a lis)
+  (cond
+   ((null? lis) #f)
+   ((eq? a (car lis)) #t)
+   (else (in? a (cdr lis))))))
+
+
 ;;; Value
 
 (define value
@@ -87,24 +97,11 @@
 
 (define int-operator?
  (lambda (op)
-  (or (eq? op '+)
-      (eq? op '-) 
-      (eq? op '*) 
-      (eq? op '/) 
-      (eq? op '%))))
+  (in? op '(+ - * / %))))
 
 (define bool-operator?
  (lambda (op)
-  (or (eq? op '==)
-      (eq? op '!=)
-      (eq? op '>)
-      (eq? op '<)
-      (eq? op '>=)
-      (eq? op '<=)
-      (eq? op '&&)
-      (eq? op '||)
-      (eq? op '!))))
-
+  (in? op '(== != > < >= <= && || !))))
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
