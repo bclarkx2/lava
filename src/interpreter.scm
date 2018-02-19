@@ -29,7 +29,7 @@
 (define value.int
   (lambda (e s)
     (cond
-      ((number? e) e)
+      ((number? (car e)) (car e))
       ((eq? '+ (operator e)) (+ (value.int(operand1 e s) s) (value.int(operand2 e s) s)))
       ((and (eq? '- (operator e)) (unary? e))
           (- 0 (value.int(operand1 e s) s)))
@@ -61,9 +61,18 @@
 (define value.evaluate
   (lambda (e s)
     (cond
-      ((or  (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e))) (value.int e s)
-      ((or (eq? '&& (operator e)) (eq? '|| (operator e))) (value.bool e s)))
-      (else '()))))
+      ((keyword? (operator e)) '())
+      ((eq? 'return (operator e)) (value.return (cdr e) s))
+      ((or (number? (operator e)) (eq? '+ (operator e)) (eq? '- (operator e)) (eq? '* (operator e)) (eq? '/ (operator e)) (eq? '% (operator e))) (value.int e s))
+      (else (value.bool e s)))))
+
+(define value.return
+  (lambda (e s)
+    (cond
+      ((null? (car e)) '())
+      ((number? (car e)) (car e))
+      (else (state.lookup (car e) s)))))
+      
 
 
 ;abstractions for value
@@ -80,7 +89,6 @@
            (cadr lis)
            (state.lookup (cadr lis) s))))))
 
-;add lookup function here
 (define operand2
   (lambda (lis s)
     (cond
@@ -94,6 +102,13 @@
   (lambda (lis)
     (if (pair? (cddr lis))#f
         #t)))
+
+;if the car of the lis is a program-defined keyword, we must execute the command
+(define keyword?
+  (lambda (atom)
+    (cond
+      ((or (eq? 'var atom) (eq? '= atom) (eq? 'if atom) (eq? 'while atom)) #t)
+      (else #f))))
 
 
 ;;; Bindings
@@ -165,7 +180,7 @@
  (lambda (stmt s)
   (state.add-binding
    (varname stmt)
-   (value stmt s)
+   (value (cddr stmt) s)  ;value of the expression
    (state.remove-binding (varname stmt) s))))
 
 (define varname
