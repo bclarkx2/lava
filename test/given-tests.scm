@@ -57,7 +57,6 @@
  (lambda ()
   (equal? (interpret "given-files/10") -39)))
 
-; <p>Test 11: This code should give an error (using before declaring).
 (define test-1-11
  (lambda ()
   (assert-err
