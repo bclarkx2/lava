@@ -6,6 +6,16 @@
 (require racket/trace)
 (require "../src/interpreter.scm")
 
+;;; helpers
+
+(define assert-err
+ (lambda (file err)
+  (with-handlers ([(lambda (msg) (equal? msg err))
+                   (lambda (msg) #t)])
+    (interpret file))))
+
+
+;;; tests
 
 (define test-1-1
  (lambda ()
@@ -50,27 +60,27 @@
 ; <p>Test 11: This code should give an error (using before declaring).
 (define test-1-11
  (lambda ()
-  ;;; (with-handlers
-  #f))
-  ;;; (equal? (interpret "given-files/11") 'GARBAGE)))
+  (assert-err
+   "given-files/11"
+   'assign-before-declare)))
 
-; <p>Test 12: This code should give an error (using before declaring).
 (define test-1-12
  (lambda ()
-  #f))
-  ;;; (equal? (interpret "given-files/12") 'GARBAGE)))
+  (assert-err
+   "given-files/12"
+   'illegal-var-dereferencing)))
 
-; <p>Test 13: This code should give an error (using before assigning).
 (define test-1-13
  (lambda ()
-  #f))
-  ;;; (equal? (interpret "given-files/13") 'GARBAGE)))
+  (assert-err
+   "given-files/13"
+   'illegal-var-dereferencing)))
 
-; <p>Test 14: This code should give an error (redefining).  This is not a required error, but it would be nice if you could catch these.
 (define test-1-14
  (lambda ()
-  #f))
-  ;;; (equal? (interpret "given-files/14") 'GARBAGE)))
+  (assert-err
+   "given-files/14"
+   'illegal-var-use)))
 
 (define test-1-15
  (lambda ()
