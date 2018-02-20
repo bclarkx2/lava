@@ -6,6 +6,13 @@
 (require racket/trace)
 (require "../src/interpreter.scm")
 
+(define assert-err
+ (lambda (file err)
+  (with-handlers ([(lambda (msg) (equal? msg err))
+                   (lambda (msg) #t)])
+    (interpret file))))
+
+
 ;;; tests
 
 (define test-1-1
@@ -14,6 +21,7 @@
 
 (define test-1-2
  (lambda ()
-  (with-handlers ([(lambda (msg) (equal? msg 'ILLEGAL-USE))
-                   (lambda (msg) msg)])
-    (interpret "binding-files/declare-before-use"))))
+  (assert-err
+   "binding-files/declare-before-use"
+   'illegal-var-dereferencing)))
+  
