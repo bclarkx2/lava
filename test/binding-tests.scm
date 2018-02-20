@@ -24,4 +24,9 @@
   (assert-err
    "binding-files/declare-before-use"
    'illegal-var-dereferencing)))
-  
+
+(define test-1-3
+ (lambda ()
+  (assert-err 
+   "binding-files/redefine"
+   'illegal-var-use)))

@@ -122,17 +122,21 @@
   (lambda (lis s)
     (cond
       ((list? (cadr lis)) (value (cadr lis) s))
-      ((if (or (number? (cadr lis)) (eq? 'true (cadr lis)) (eq? 'false (cadr lis)))
-           (cadr lis)
-           (state.lookup (cadr lis) s))))))
+      ((or (number? (cadr lis))
+           (eq? 'true (cadr lis))
+           (eq? 'false (cadr lis)))
+           (cadr lis))
+      (else (state.lookup (cadr lis) s)))))
 
 (define operand2
   (lambda (lis s)
     (cond
       ((list? (caddr lis)) (value (caddr lis) s))
-      ((if (or (number? (caddr lis)) (eq? 'true (caddr lis)) (eq? 'false (caddr lis)))
-           (caddr lis)
-           (state.lookup (caddr lis) s))))))
+      ((or (number? (caddr lis))
+           (eq? 'true (caddr lis))
+           (eq? 'false (caddr lis)))
+           (caddr lis))
+      (else (state.lookup (caddr lis) s)))))
     
 (define compute
   (lambda (op e s)
@@ -173,7 +177,7 @@
 (define state.lookup
   (lambda (var s)
     (cond
-      ((null? (variables s)) '())
+      ((null? (variables s)) (raise 'illegal-var-dereferencing))
       ((eq? var (car (variables s)))
        (if (null? (car (var-values s))) (raise 'illegal-var-dereferencing)
            (car (var-values s))))
