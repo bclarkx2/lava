@@ -30,7 +30,14 @@
       ((null? stmt-list) (null-value))
       ((list? (car stmt-list))
        (if (null? (value (car stmt-list) s))
-           (value (cdr stmt-list) (state (car stmt-list) s default-brk default-cont))
+           (value (cdr stmt-list) (call/cc
+                                   (lambda (return)
+                                    state (car stmt-list)
+                                          s
+                                          default-brk
+                                          default-cont
+                                          return
+                                          default-throw)))
            (value (car stmt-list) s)))
       (else
        (value-evaluate stmt-list s)))))
