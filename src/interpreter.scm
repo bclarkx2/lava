@@ -203,9 +203,9 @@
 
 ;;; State gotos
 
-(define default-brk (lambda () (raise 'illegal-break)))
-(define default-cont (lambda () (raise 'illegal-cont)))
-(define default-throw (lambda () (raise 'illegal-throw)))
+(define default-brk (lambda (x) (raise 'illegal-break)))
+(define default-cont (lambda (x) (raise 'illegal-cont)))
+(define default-throw (lambda (x y) (raise 'illegal-throw)))
 
 
 
