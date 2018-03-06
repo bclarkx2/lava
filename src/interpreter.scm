@@ -157,12 +157,14 @@
 
 ;;; Bindings
 
-(define state-empty (lambda () '(() ())))
+(define state-empty (lambda () '((() ()))))
 (define null-value (lambda () '()))
 
+;**IMPORTANT:  Add, Remove, and Lookup operate within the context of the topmost layer in the list
+;Variables, Var-values, and Remaining return the variable, values, and remaining lists respectively for the topmost layer only
 (define state-add-binding
   (lambda (var value s)
-    (list (cons var (car s)) (cons value (cadr s)))))
+    (cons (list (cons var (variables s)) (cons value (var-values s))) (cdr s))))
      
 
 (define state-remove-binding
@@ -174,7 +176,6 @@
              (cons (car (variables s)) (car (state-remove-binding var (remaining s))))
              (cons (car (var-values s)) (cadr (state-remove-binding var (remaining s)))))))))
        
-
 (define state-lookup
   (lambda (var s)
     (cond
@@ -184,15 +185,27 @@
            (car (var-values s))))
        (else (state-lookup var (remaining s))))))
 
+(define state-add-layer
+  (lambda (state)
+    (cons '(() ()) state)))
+
+(define state-remove-layer
+  (lambda (state)
+    (cdr state)))
+
+(define top-layer
+  (lambda (state)
+    (car state)))
+
 (define variables
-  (lambda (vartable) (car vartable)))
+  (lambda (state) (car (top-layer state))))
 
 (define var-values
-  (lambda (vartable) (cadr vartable)))
+  (lambda (state) (cadr (top-layer state))))
 
 (define remaining
-  (lambda (vartable)
-    (list (cdr (car vartable)) (cdr (car (cdr vartable))))))
+  (lambda (state)
+    (list (cdr (variables state)) (cdr (var-values state)))))
 
 ;;; State Mappings
 
