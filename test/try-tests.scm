@@ -105,3 +105,29 @@
       (finally
        (= x 99))))))
    '((x) (99)))))
+
+; throw in catch block
+(define test-3-1
+ (lambda ()
+  (assert-state-err
+   '((var x 10)
+     (try
+      (throw 20)
+     (catch (e)
+      (throw 30))
+     (finally
+      (= x 99))))
+   'illegal-throw)))
+
+; throw in finally block
+(define test-3-2
+ (lambda ()
+  (assert-state-err
+   '((var x 10)
+     (try
+      (= x 20)
+     (catch (e)
+      (= x 30))
+     (finally
+      (throw 40))))
+   'illegal-throw)))
