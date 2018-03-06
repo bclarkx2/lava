@@ -353,7 +353,10 @@
 
 (define state-block
  (lambda (stmt s brk cont return throw)
-  (state (block-contents stmt) s brk cont return throw)))
+  (state-remove-layer
+   (state (block-contents stmt) 
+          (state-add-layer s)
+          brk cont return throw))))
 
 (define block-contents (lambda (stmt) (cdr stmt)))
 
