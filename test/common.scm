@@ -27,3 +27,15 @@
  (lambda (result expected)
    (print-results (equal? result expected)
                   expected result)))
+
+(define assert-state
+ (lambda (stmt-tree expected)
+  (assert
+   (call/cc (lambda (return)
+    (state stmt-tree
+           (state-empty)
+           default-brk
+           default-cont
+           return
+           default-throw)))
+   expected)))
