@@ -52,7 +52,7 @@ do
         test_exists=$?
 
         if [[ test_exists -eq 0 ]] ; then
-            if [[ "$result" == "#f" ]] ; then
+            if [[ "$result" == "#f"* ]] ; then
                 format_result="${red}$result${reset}"
                 overall_pass=false
                 ((num_fail++))
