@@ -57,3 +57,10 @@
         (= x (- x 1))
         (if (< x 6) (break) (continue)))))
    '((x) (5)))))
+
+(define test-1-6
+ (lambda ()
+  (assert-state-err
+   '((var x 10)
+     (break))
+   'illegal-break)))
