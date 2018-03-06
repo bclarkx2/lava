@@ -28,6 +28,12 @@
    (print-results (equal? result expected)
                   expected result)))
 
+(define assert-state-err
+ (lambda (stmt-tree err)
+  (with-handlers ([(lambda (msg) (equal? msg err))
+                   (lambda (msg) #t)])
+   (assert-state stmt-tree err))))
+
 (define assert-state
  (lambda (stmt-tree expected)
   (assert
