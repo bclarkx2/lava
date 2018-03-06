@@ -30,7 +30,7 @@
       ((null? stmt-list) (null-value))
       ((list? (car stmt-list))
        (if (null? (value (car stmt-list) s))
-           (value (cdr stmt-list) (state (car stmt-list) s))
+           (value (cdr stmt-list) (state (car stmt-list) s default-brk default-cont))
            (value (car stmt-list) s)))
       (else
        (value-evaluate stmt-list s)))))
@@ -194,26 +194,77 @@
   (lambda (vartable)
     (list (cdr (car vartable)) (cdr (car (cdr vartable))))))
 
+;;; State gotos
+
+(define default-brk (lambda () (raise 'illegal-break)))
+(define default-cont (lambda () (raise 'illegal-cont)))
+(define default-throw (lambda () (raise 'illegal-throw)))
+
+
+
+;;; stubs
+
+(define state-add-layer
+ (lambda (s) s))
+
+(define state-remove-layer
+ (lambda (s) s))
+
+
 ;;; State Mappings
 
+(define top-level-state
+ (lambda (stmt-lst)
+  (call/cc
+   (lambda (return)
+    (state stmt-lst
+           (state-empty)
+           default-brk
+           default-cont
+           return)))))
+  
+
 (define state
-  (lambda (stmt s)
+  (lambda (stmt s brk cont return throw)
     (cond
 
       ; null and return statements do not alter state
       ((null? stmt) s)
-      ((eq? (keyword stmt) 'return) s)
+      ((eq? (keyword stmt) 'return) (return s))
+
+      ; may be a list of statements
+      ((list? (keyword stmt)) (state-list stmt s brk cont return throw))
 
       ; remaining operations delegated to helpers
       ((eq? (keyword stmt) '=) (state-assign stmt s))
-      ((eq? (keyword stmt) 'if) (state-if stmt s))
+      ((eq? (keyword stmt) 'if) (state-if stmt s brk cont return throw))
       ((eq? (keyword stmt) 'var) (state-var stmt s))
-      ((eq? (keyword stmt) 'while) (state-while stmt s))
+      ((eq? (keyword stmt) 'while) (state-while stmt s brk cont return throw))
+      ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw))
+      ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
+
+      ; goto keywords
+      ((eq? (keyword stmt) 'break) (brk s))
+      ((eq? (keyword stmt) 'continue) (cont s))
+      ((eq? (keyword stmt) 'throw) (handle-throw stmt s throw))
 
       (else s))))
 
 (define keyword
   (lambda (stmt) (car stmt)))
+
+(define handle-throw
+ (lambda (stmt s throw)
+  (throw s (value (cdr stmt) s))))
+
+
+;; Statement list
+
+(define state-list
+ (lambda (stmt s brk cont return throw)
+  (state (cdr stmt)
+         (state (car stmt) s brk cont return throw)
+         brk cont return throw)))
 
 
 ;; Assignment
@@ -238,10 +289,10 @@
 ;; If
 
 (define state-if
-  (lambda (stmt s)
+  (lambda (stmt s brk cont return throw)
     (if (value-evaluate (condition stmt) s)
-        (state (stmt1 stmt) s)
-        (state (stmt2 stmt) s))))
+        (state (stmt1 stmt) s brk cont return throw)
+        (state (stmt2 stmt) s brk cont return throw))))
 
 (define condition (lambda (stmt) (cadr stmt)))
 (define stmt1 (lambda (stmt) (caddr stmt)))
@@ -271,17 +322,101 @@
     (lambda (stmt) (cddr stmt)))
 
 
-  ;; While
+;; While
 
-  (define state-while
-    (lambda (stmt s) s
-      (if (value-evaluate (condition stmt) s)
-          (state stmt
-                 (state (loopbody stmt)
-                        (state (condition stmt)
-                               s)))
-          (state (condition stmt) s))))
+(define state-while
+  (lambda (stmt s brk cont return throw)
+   (call/cc (lambda (while-brk)
+     (if (value-evaluate (condition stmt) s)
+           (state stmt
+                   (call/cc (lambda (while-cont) 
+                    (state (loopbody stmt)
+                           (state (condition stmt)
+                                  s
+                                  brk cont return throw)
+                           while-brk while-cont return throw)))
+                    while-brk cont return throw)
+          (state (condition stmt) s brk cont return throw))))))
 
-  (define loopbody
-    (lambda (stmt) (caddr stmt)))
+(define loopbody
+  (lambda (stmt) (caddr stmt)))
+
+
+;; Block
+
+(define state-block
+ (lambda (stmt s brk cont return throw)
+  (state (block-contents stmt) s brk cont return throw)))
+
+(define block-contents (lambda (stmt) (cdr stmt)))
+
+
+;; Try
+
+; TODO: only have one case and pass '() to state for undef blocks
+(define state-try
+ (lambda (stmt s brk cont return throw)
+  ;;; (cond 
+  ;;;  ((and (null? (finally stmt))
+  ;;;        (null? (catch stmt)))
+  ;;;   (state (try stmt) s brk cont return throw))
+  ;;;  ((null? (catch stmt))
+  ;;;   (state (finally stmt)
+  ;;;          (call/cc (lambda (try-throw)
+  ;;;           (state (try stmt) s brk cont return
+  ;;;            (lambda (aborted-throw-state val)
+  ;;;             (try-throw aborted-throw-state)))))
+  ;;;          brk cont return throw))
+  ;;;  ((null? (finally stmt))
+  ;;;   (call/cc (lambda (final-state)
+  ;;;    (state (try stmt)
+  ;;;           s
+  ;;;           brk cont return
+  ;;;            (throw-that-does-catch stmt
+  ;;;                                   final-state
+  ;;;                                   brk cont return throw)))))
+  ;;;  (else 
+    (state (finally stmt)
+           (call/cc (lambda (try-state)
+            (state (try stmt)
+                   s
+                   brk cont return
+                    (throw-that-does-catch stmt
+                                           try-state
+                                           brk
+                                           cont
+                                           return
+                                           throw))))
+           brk cont return throw)))
+
+(define throw-that-does-catch
+ (lambda (stmt result-state brk cont return throw)
+  (lambda (aborted-throw-state throw-val)
+   (result-state
+     (state-remove-layer
+      (state (catch stmt)
+             (state-add-binding
+              (catch-var stmt)
+              throw-val
+              (state-add-layer aborted-throw-state))
+             brk cont return throw))))))
+
+
+
+(define try (lambda (stmt) (cadr stmt)))
+(define catch-var
+ (lambda (stmt)
+  (caadr (caddr stmt))))
+(define catch
+ (lambda (stmt)
+  (if (null? (caddr stmt))
+   '()
+   (caddr (caddr stmt)))))
+
   
+(define finally-block (lambda (stmt) (cadddr stmt)))
+(define finally
+ (lambda (stmt)
+  (if (null? (finally-block stmt))
+   '()
+   (cadr (finally-block stmt)))))
