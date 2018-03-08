@@ -165,33 +165,53 @@
 ;;; Bindings
 
 (define state-empty (lambda () '((() ()))))
+(define layer-empty (lambda () '(() ())))
 (define null-value (lambda () '()))
 
 ;**IMPORTANT:  Add, Remove, and Lookup operate within the context of the topmost layer in the list
 ;Variables, Var-values, and Remaining return the variable, values, and remaining lists respectively for the topmost layer only
 (define state-add-binding
   (lambda (var value s)
-    (cons (list (cons var (variables s)) (cons value (var-values s))) (cdr s))))
-     
+    (cons (list (cons var (variables (top-layer s))) (cons (box value) (var-values (top-layer s)))) (cdr s))))
 
-(define state-remove-binding
-  (lambda (var s)
+(define state-set-binding
+  (lambda (var newValue s)
     (cond
       ((equal? s (state-empty)) (state-empty))
-      ((eq? var (car (variables s))) (remaining s))
-      (else (list
-             (cons (car (variables s)) (car (state-remove-binding var (remaining s))))
-             (cons (car (var-values s)) (cadr (state-remove-binding var (remaining s)))))))))
-       
-(define state-lookup
-  (lambda (var s)
-    (cond
-      ((null? (variables s)) (raise 'illegal-var-dereferencing))
-      ((eq? var (car (variables s)))
-       (if (null? (car (var-values s))) (raise 'illegal-var-dereferencing)
-           (car (var-values s))))
-       (else (state-lookup var (remaining s))))))
+      ((null? s) (null-value))
+      ((in? var (variables (top-layer s))) (cons (change-binding var newValue (top-layer s)) (cdr s)))
+      (else (cons (top-layer s) (state-set-binding var newValue (cdr s)))))))
 
+(define change-binding
+  (lambda (var newValue layer)
+    (cond
+      ((equal? layer (layer-empty)) (layer-empty))
+      ((eq? var (car (variables layer))) (begin (set-box! (car (var-values layer)) newValue) layer))
+      (else (list (cons (car (variables layer)) (car (change-binding var newValue (list (cdr (variables layer)) (cdr (var-values layer))))))
+                  (cons (car (var-values layer)) (cadr (change-binding var newValue (list (cdr (variables layer)) (cdr (var-values layer)))))))))))
+                       
+
+(define state-lookup
+  (lambda (var lis)
+    (cond
+      ((null? lis) (raise 'illegal-var-dereferencing))
+      ((equal? lis (state-empty)) (raise 'illegal-var-deferencing))
+      ((equal? lis (layer-empty)) '())
+      ((is-state lis)
+       (if (null? (state-lookup-box var (top-layer lis)))
+           (state-lookup-box var (cdr lis))
+           (state-lookup-box var (top-layer lis))))
+      (else
+       (if (eq? var (car (variables lis)))
+           (unbox (car (var-values lis)))
+           (state-lookup-box var (list
+                                  (cons (car (variables lis)) (car (state-lookup-box var (list (cdr (variables lis)) (cdr (var-values lis))))))
+                                  (cons (car (var-values lis)) (cadr (state-lookup-box var (list (cdr (variables lis)) (cdr (var-values lis)))))))))))))
+
+(define is-state
+  (lambda (s)
+    (and (not (null? (car s))) (list? (caar s)))))
+        
 (define state-add-layer
   (lambda (state)
     (cons '(() ()) state)))
@@ -205,10 +225,10 @@
     (car state)))
 
 (define variables
-  (lambda (state) (car (top-layer state))))
+  (lambda (layer) (car layer)))
 
 (define var-values
-  (lambda (state) (cadr (top-layer state))))
+  (lambda (layer) (cadr layer)))
 
 (define remaining
   (lambda (state)
@@ -220,15 +240,6 @@
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
 
-
-
-;;; stubs
-
-(define state-add-layer
- (lambda (s) s))
-
-(define state-remove-layer
- (lambda (s) s))
 
 
 ;;; State Mappings
