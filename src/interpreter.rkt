@@ -91,6 +91,10 @@
   (lambda (op)
     (in? op '(== != > < >= <= && || !))))
 
+(define operator?
+  (lambda (word)
+    (or (int-operator? word) (bool-operator? word))))
+
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
   (lambda (lis s)
@@ -121,11 +125,6 @@
   (lambda (lis)
     (if (pair? (cddr lis))#f
         #t)))
-
-;if the car of the lis is a program-defined keyword, we must execute the command
-(define interpreter-keyword?
-  (lambda (atom)
-    (in? atom '(var = if while return begin break continue try))))
 
 
 ;;; Bindings
@@ -220,15 +219,18 @@
 
 (define top-level-state
  (lambda (stmt-lst)
+  (state-no-continuations stmt-lst (state-empty))))
+  
+(define state-no-continuations
+  (lambda (stmt-lst s)
   (call/cc
    (lambda (return)
     (state stmt-lst
-           (state-empty)
+           s
            default-brk
            default-cont
            return
            default-throw)))))
-  
 
 (define state
   (lambda (stmt s brk cont return throw)
@@ -243,9 +245,9 @@
       ((list? (keyword stmt)) (state-list stmt s brk cont return throw))
 
       ; remaining operations delegated to helpers
-      ((eq? (keyword stmt) '=) (state-assign stmt s))
+      ((eq? (keyword stmt) '=) (state-assign stmt s brk cont return throw))
       ((eq? (keyword stmt) 'if) (state-if stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'var) (state-var stmt s))
+      ((eq? (keyword stmt) 'var) (state-var stmt s brk cont return throw))
       ((eq? (keyword stmt) 'while) (state-while stmt s brk cont return throw))
       ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw))
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
@@ -256,10 +258,10 @@
       ((eq? (keyword stmt) 'throw) (handle-throw stmt s throw))
 
       ; assignment
-      ((or (int-operator? (keyword stmt)) (bool-operator? (keyword stmt)))
+      ((operator? (keyword stmt))
        (if (unary? stmt)
            (state (cdr stmt) s brk cont return throw)
-           (state (varname stmt) (state (varexpr stmt) s brk cont return throw) brk cont return throw)))
+           (state (varexpr stmt) (state (varname stmt) s brk cont return throw) brk cont return throw)))
       
       (else s))))
 
@@ -289,12 +291,12 @@
 ;; Assignment
 
 (define state-assign
-  (lambda (stmt s)
+  (lambda (stmt s brk cont return throw)
     (if (is-declared (varname stmt) s)
         (state-set-binding
          (varname stmt)
          (value-evaluate (varexpr stmt) s)
-         s)
+         (state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
 
 (define varname
@@ -310,8 +312,12 @@
 (define state-if
   (lambda (stmt s brk cont return throw)
     (if (value-evaluate (condition stmt) s)
-        (state (stmt1 stmt) s brk cont return throw)
-        (state (stmt2 stmt) s brk cont return throw))))
+        (state (stmt1 stmt)
+               (state (condition stmt) s brk cont return throw)
+               brk cont return throw)
+        (state (stmt2 stmt)
+               (state (condition stmt) s brk cont return throw)
+               brk cont return throw))))
 
 (define condition (lambda (stmt) (cadr stmt)))
 (define stmt1 (lambda (stmt) (caddr stmt)))
@@ -325,20 +331,22 @@
 ;; Var
 
 (define state-var
-  (lambda (stmt s)
+  (lambda (stmt s brk cont return throw)
     (if (is-declared (varname stmt) s)
         (raise 'illegal-var-use)
         (if (has-initialization stmt)
             (state-add-binding
-             (varname stmt) (value-evaluate (car (initialization stmt)) s) s)
+             (varname stmt)
+             (value-evaluate (initialization stmt) s)
+             (state (initialization stmt) s brk cont return throw))
             (state-add-binding
              (varname stmt) '() s)))))
 
   (define has-initialization
-    (lambda (stmt) (not (null? (initialization stmt)))))
+    (lambda (stmt) (not (null? (cddr stmt)))))
 
   (define initialization
-    (lambda (stmt) (cddr stmt)))
+    (lambda (stmt) (caddr stmt)))
 
 
 ;; While
