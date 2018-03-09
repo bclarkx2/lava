@@ -163,7 +163,7 @@
       ((null? lis) (raise 'illegal-var-dereferencing))
       ((equal? lis (state-empty)) (raise 'illegal-var-deferencing))
       ((equal? lis (layer-empty)) '())
-      ((is-state lis)
+      ((is-state? lis)
        (if (null? (state-lookup var (top-layer lis)))
            (state-lookup var (cdr lis))
            (state-lookup var (top-layer lis))))
@@ -177,13 +177,13 @@
     (cond
       ((null? lis) #f)
       ((equal? lis (layer-empty)) #f)
-      ((is-state lis) (or (is-declared var (top-layer lis)) (is-declared var (cdr lis))))
+      ((is-state? lis) (or (is-declared var (top-layer lis)) (is-declared var (cdr lis))))
       ((eq? var (car (variables lis))) #t)
       (else (is-declared var (list (cdr (variables lis)) (cdr (var-values lis))))))))
        
      
 
-(define is-state
+(define is-state?
   (lambda (s)
     (and (not (null? (car s))) (list? (caar s)))))
         
