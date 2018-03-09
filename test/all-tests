@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+find . 							\
+     -name '*.rkt' 				\
+     ! -name 'common.rkt' 		\
+     -exec ./run-tests {} \;
