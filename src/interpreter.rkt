@@ -29,7 +29,7 @@
       ((number? e) e)
       ((number? (car e)) (car e))
       ((and (eq? '- (operator e)) (unary? e))
-       (- 0 (value-evaluate(operand1 e s) s)))
+       (- 0 (value (operand1 e s) s)))
       ((eq? '+ (operator e)) (compute + e s))
       ((eq? '- (operator e)) (compute - e s))
       ((eq? '* (operator e)) (compute * e s))
@@ -49,14 +49,14 @@
       ((eq? '<= (operator e)) (compute <= e s))
       ((eq? '&& (operator e)) (compute (lambda (a b) (and a b)) e s))
       ((eq? '|| (operator e)) (compute (lambda (a b) (or a b)) e s))
-      ((eq? '! (operator e)) (not (value-evaluate(operand1 e s) s)))
+      ((eq? '! (operator e)) (not (value (operand1 e s) s)))
       (else (error 'badop "Undefined bool operator")))))
 
-(define value-evaluate
+(define value
   (lambda (e s)
     (if (list? e)
         (cond
-          ((null? (cdr e)) (value-evaluate (car e) s))
+          ((null? (cdr e)) (value (car e) s))
           ((int-operator? (operator e)) (value-int e s))
           ((bool-operator? (operator e)) (value-bool e s))
           ((eq? '= (operator e)) (operand2 e s))
@@ -84,13 +84,14 @@
 
 (define operator?
   (lambda (word)
-    (or (int-operator? word) (bool-operator? word))))
+    (or (int-operator? word)
+        (bool-operator? word))))
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
   (lambda (lis s)
     (cond
-      ((list? (cadr lis)) (value-evaluate (cadr lis) s))
+      ((list? (cadr lis)) (value (cadr lis) s))
       ((or (number? (cadr lis))
            (eq? 'true (cadr lis))
            (eq? 'false (cadr lis)))
@@ -100,7 +101,7 @@
 (define operand2
   (lambda (lis s)
     (cond
-      ((list? (caddr lis)) (value-evaluate (caddr lis) s))
+      ((list? (caddr lis)) (value (caddr lis) s))
       ((or (number? (caddr lis))
            (eq? 'true (caddr lis))
            (eq? 'false (caddr lis)))
@@ -109,8 +110,8 @@
     
 (define compute
   (lambda (op e s)
-    (op (value-evaluate (operand1 e s) s)
-        (value-evaluate (operand2 e s) s))))
+    (op (value (operand1 e s) s)
+        (value (operand2 e s) s))))
 
 (define unary?
   (lambda (lis)
@@ -283,14 +284,14 @@
 
 (define handle-throw
  (lambda (stmt s throw)
-  (throw s (value-evaluate (cdr stmt) s))))
+  (throw s (value (cdr stmt) s))))
 
 (define handle-return
   (lambda (stmt s return)
     (cond 
-      ((eq? (value-evaluate (cdr stmt) s) #t) (return 'true))
-      ((eq? (value-evaluate (cdr stmt) s) #f) (return 'false))
-      (else (return (value-evaluate (cdr stmt) s))))))
+      ((eq? (value (cdr stmt) s) #t) (return 'true))
+      ((eq? (value (cdr stmt) s) #f) (return 'false))
+      (else (return (value (cdr stmt) s))))))
 
 ;; Statement list
 
@@ -308,7 +309,7 @@
     (if (is-declared (varname stmt) s)
         (state-set-binding
          (varname stmt)
-         (value-evaluate (varexpr stmt) s)
+         (value (varexpr stmt) s)
          (state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
 
@@ -324,7 +325,7 @@
 
 (define state-if
   (lambda (stmt s brk cont return throw)
-    (if (value-evaluate (condition stmt) s)
+    (if (value (condition stmt) s)
         (state (stmt1 stmt)
                (state (condition stmt) s brk cont return throw)
                brk cont return throw)
@@ -350,7 +351,7 @@
         (if (has-initialization stmt)
             (state-add-binding
              (varname stmt)
-             (value-evaluate (initialization stmt) s)
+             (value (initialization stmt) s)
              (state (initialization stmt) s brk cont return throw))
             (state-add-binding
              (varname stmt) '() s)))))
@@ -367,7 +368,7 @@
 (define state-while
   (lambda (stmt s brk cont return throw)
    (call/cc (lambda (while-brk)
-     (if (value-evaluate (condition stmt) s)
+     (if (value (condition stmt) s)
            (state stmt
                    (call/cc (lambda (while-cont) 
                     (state (loopbody stmt)
