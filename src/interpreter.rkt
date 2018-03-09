@@ -9,7 +9,13 @@
 
 (define interpret
   (lambda (filename)
-    (top-level-state (parser filename))))
+    (with-handlers ([(lambda (msg) (error msg))
+                     (lambda (msg) msg)])
+     (interpret-raise filename))))
+
+(define interpret-raise
+  (lambda (filename)
+     (top-level-state (parser filename))))
 
 
 ;;; General helpers

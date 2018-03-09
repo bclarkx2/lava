@@ -7,12 +7,8 @@
 (require racket/trace)
 (require "../src/interpreter.rkt")
 
+
 ;;; utilities
-(define assert-err
- (lambda (file err)
-  (with-handlers ([(lambda (msg) (equal? msg err))
-                   (lambda (msg) #t)])
-    (interpret file))))
 
 (define print-results
  (lambda (success expected result)
@@ -22,11 +18,20 @@
     (writeln success)
     (writeln expected)
     (writeln result)))))
-  
+
 (define assert
  (lambda (result expected)
    (print-results (equal? result expected)
                   expected result)))
+
+
+;;; Asserts
+
+(define assert-interpret-err
+  (lambda (file err)
+    (with-handlers ([(lambda (msg) (equal? msg err))
+                   (lambda (msg) #t)])
+     (interpret-raise file))))
 
 (define assert-state-err
  (lambda (stmt-tree err)
