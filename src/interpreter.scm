@@ -457,13 +457,15 @@
  (lambda (stmt result-state brk cont return throw)
   (lambda (aborted-throw-state throw-val)
    (result-state
-     (state-remove-layer
-      (state (catch stmt)
-             (state-add-binding
-              (catch-var stmt)
-              throw-val
-              (state-add-layer aborted-throw-state))
-             brk cont return throw))))))
+      (state (list 'begin (list 'var (catch-var stmt) throw-val) (catch stmt))
+             aborted-throw-state
+             brk cont return throw)))))
+             
+;             (state-add-binding
+;              (catch-var stmt)
+;              throw-val
+;              (state-add-layer aborted-throw-state))
+;             brk cont return throw))))))
 
 
 
