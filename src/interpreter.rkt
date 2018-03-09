@@ -89,25 +89,21 @@
 
 ;add lookup function here - if variable, lookup, else return atom
 (define operand1
-  (lambda (lis s)
-    (cond
-      ((list? (cadr lis)) (value (cadr lis) s))
-      ((or (number? (cadr lis))
-           (eq? 'true (cadr lis))
-           (eq? 'false (cadr lis)))
-           (cadr lis))
-      (else (state-lookup (cadr lis) s)))))
+  (lambda (lis s) (operand (cadr lis) s)))
 
 (define operand2
-  (lambda (lis s)
+  (lambda (lis s) (operand (caddr lis) s)))
+
+(define operand
+  (lambda (expr s)
     (cond
-      ((list? (caddr lis)) (value (caddr lis) s))
-      ((or (number? (caddr lis))
-           (eq? 'true (caddr lis))
-           (eq? 'false (caddr lis)))
-           (caddr lis))
-      (else (state-lookup (caddr lis) s)))))
-    
+      ((list? expr) (value expr s))
+      ((or (number? expr)
+           (eq? 'true expr)
+           (eq? 'false expr))
+           expr)
+      (else (state-lookup expr s)))))
+
 (define compute
   (lambda (op e s)
     (op (value (operand1 e s) s)
