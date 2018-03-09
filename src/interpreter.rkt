@@ -7,12 +7,14 @@
 (provide (all-defined-out))
 (require "simpleParser.rkt")
 
+; top-level interpret function -- throws errors
 (define interpret
   (lambda (filename)
     (with-handlers ([(lambda (msg) (error msg))
                      (lambda (msg) msg)])
      (interpret-raise filename))))
 
+; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename)
      (top-level-state (parser filename))))
@@ -85,11 +87,11 @@
 
 (define int-operator?
   (lambda (op)
-    (in? op '(+ - * / %))))
+    (member op '(+ - * / %))))
 
 (define bool-operator?
   (lambda (op)
-    (in? op '(== != > < >= <= && || !))))
+    (member op '(== != > < >= <= && || !))))
 
 (define operator?
   (lambda (word)
@@ -146,7 +148,7 @@
     (cond
       ((equal? s (state-empty)) (state-empty))
       ((null? s) (null-value))
-      ((in? var (top-layer-variables s))
+      ((member var (top-layer-variables s))
         (cons (change-binding var newValue (top-layer s))
               (state-remaining s)))
       (else
