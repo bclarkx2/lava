@@ -20,18 +20,7 @@
      (top-level-state (parser filename))))
 
 
-;;; General helpers
-
-(define in?
-  (lambda (a lis)
-    (cond
-      ((null? lis) #f)
-      ((eq? a (car lis)) #t)
-      (else (in? a (cdr lis))))))
-
-
 ;;; Value
-
  
 ;Mathematical Operators
 (define value-int
