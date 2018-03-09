@@ -68,7 +68,6 @@
           ((eq? 'false e) #f)
           (else (state-lookup e s))))))
 
-
 ;abstractions for value
 (define operator
   (lambda (e)
@@ -87,7 +86,11 @@
     (or (int-operator? word)
         (bool-operator? word))))
 
-;add lookup function here - if variable, lookup, else return atom
+(define unary?
+  (lambda (lis)
+    (if (pair? (cddr lis))#f
+        #t)))
+
 (define operand1
   (lambda (lis s) (operand (cadr lis) s)))
 
@@ -108,11 +111,6 @@
   (lambda (op e s)
     (op (value (operand1 e s) s)
         (value (operand2 e s) s))))
-
-(define unary?
-  (lambda (lis)
-    (if (pair? (cddr lis))#f
-        #t)))
 
 
 ;;; Bindings
@@ -156,6 +154,16 @@
            (unbox (car (layer-values lis)))
            (state-lookup var (layer-remaining lis)))))))
 
+(define is-declared
+  (lambda (var lis)
+    (cond
+      ((null? lis) #f)
+      ((equal? lis (layer-empty)) #f)
+      ((is-state? lis) (or (is-declared var (top-layer lis))
+                           (is-declared var (state-remaining lis))))
+      ((eq? var (car (layer-variables lis))) #t)
+      (else (is-declared var (layer-remaining lis))))))
+
 (define state-add-layer
   (lambda (state)
     (cons '(() ()) state)))
@@ -177,16 +185,6 @@
                         (car (change-binding var newValue (layer-remaining layer))))
                   (cons (car (layer-values layer))
                         (cadr (change-binding var newValue (layer-remaining layer)))))))))
-
-(define is-declared
-  (lambda (var lis)
-    (cond
-      ((null? lis) #f)
-      ((equal? lis (layer-empty)) #f)
-      ((is-state? lis) (or (is-declared var (top-layer lis))
-                           (is-declared var (state-remaining lis))))
-      ((eq? var (car (layer-variables lis))) #t)
-      (else (is-declared var (layer-remaining lis))))))
 
 (define is-state?
   (lambda (s)
@@ -278,6 +276,9 @@
 (define keyword
   (lambda (stmt) (car stmt)))
 
+
+;; Handlers
+
 (define handle-throw
  (lambda (stmt s throw)
   (throw s (value (cdr stmt) s))))
@@ -288,6 +289,7 @@
       ((eq? (value (cdr stmt) s) #t) (return 'true))
       ((eq? (value (cdr stmt) s) #f) (return 'false))
       (else (return (value (cdr stmt) s))))))
+
 
 ;; Statement list
 
@@ -315,7 +317,6 @@
 (define varexpr
   (lambda (stmt) (caddr stmt)))
   
-
 
 ;; If
 
@@ -420,8 +421,6 @@
       (state (list 'begin (list 'var (catch-var stmt) throw-val) (catch stmt))
              aborted-throw-state
              brk cont return throw)))))
-             
-
 
 (define try (lambda (stmt) (cadr stmt)))
 (define catch-var
@@ -433,7 +432,6 @@
    '()
    (caddr (caddr stmt)))))
 
-  
 (define finally-block (lambda (stmt) (cadddr stmt)))
 (define finally
  (lambda (stmt)
