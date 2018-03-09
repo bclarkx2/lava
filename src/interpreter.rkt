@@ -397,7 +397,6 @@
 
 ;; Try
 
-; TODO: only have one case and pass '() to state for undef blocks
 (define state-try
  (lambda (stmt s brk cont return throw)
     (state (finally stmt)
