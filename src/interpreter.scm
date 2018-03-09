@@ -435,38 +435,23 @@
 ; TODO: only have one case and pass '() to state for undef blocks
 (define state-try
  (lambda (stmt s brk cont return throw)
-  ;;; (cond 
-  ;;;  ((and (null? (finally stmt))
-  ;;;        (null? (catch stmt)))
-  ;;;   (state (try stmt) s brk cont return throw))
-  ;;;  ((null? (catch stmt))
-  ;;;   (state (finally stmt)
-  ;;;          (call/cc (lambda (try-throw)
-  ;;;           (state (try stmt) s brk cont return
-  ;;;            (lambda (aborted-throw-state val)
-  ;;;             (try-throw aborted-throw-state)))))
-  ;;;          brk cont return throw))
-  ;;;  ((null? (finally stmt))
-  ;;;   (call/cc (lambda (final-state)
-  ;;;    (state (try stmt)
-  ;;;           s
-  ;;;           brk cont return
-  ;;;            (throw-that-does-catch stmt
-  ;;;                                   final-state
-  ;;;                                   brk cont return throw)))))
-  ;;;  (else 
     (state (finally stmt)
            (call/cc (lambda (try-state)
             (state (try stmt)
                    s
-                   brk cont return
+                   (break-that-does-finally stmt brk cont return throw) cont return
                     (throw-that-does-catch stmt
                                            try-state
-                                           brk
+                                           (break-that-does-finally stmt brk cont return throw)
                                            cont
                                            return
                                            throw))))
            brk cont return throw)))
+
+(define break-that-does-finally
+  (lambda (stmt brk cont return throw)
+    (lambda (exiting-state)
+      (brk (state (finally stmt) exiting-state brk cont return throw)))))
 
 (define throw-that-does-catch
  (lambda (stmt result-state brk cont return throw)
