@@ -33,8 +33,8 @@
       ((is-state? s)
         (cons (unbox-all (car s)) (unbox-all (cdr s))))
       (else
-        (list (cons (car (variables s)) (car (unbox-all (list (cdr (variables s)) (cdr (var-values s))))))
-              (cons (unbox (car (var-values s))) (cadr (unbox-all (list (cdr (variables s)) (cdr (var-values s)))))))))))
+        (list (cons (car (layer-variables s)) (car (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s))))))
+              (cons (unbox (car (layer-values s))) (cadr (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s)))))))))))
                        
 
 ;;; Asserts

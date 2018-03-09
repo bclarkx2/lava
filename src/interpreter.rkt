@@ -137,24 +137,21 @@
 ;Variables, Var-values, and Remaining return the variable, values, and remaining lists respectively for the topmost layer only
 (define state-add-binding
   (lambda (var value s)
-    (cons (list (cons var (variables (top-layer s))) (cons (box value) (var-values (top-layer s)))) (cdr s))))
+    (cons (list (cons var (top-layer-variables s))
+                (cons (box value) (top-layer-values s)))
+          (state-remaining s))))
 
 (define state-set-binding
   (lambda (var newValue s)
     (cond
       ((equal? s (state-empty)) (state-empty))
       ((null? s) (null-value))
-      ((in? var (variables (top-layer s))) (cons (change-binding var newValue (top-layer s)) (cdr s)))
-      (else (cons (top-layer s) (state-set-binding var newValue (cdr s)))))))
-
-(define change-binding
-  (lambda (var newValue layer)
-    (cond
-      ((equal? layer (layer-empty)) (layer-empty))
-      ((eq? var (car (variables layer))) (begin (set-box! (car (var-values layer)) newValue) layer))
-      (else (list (cons (car (variables layer)) (car (change-binding var newValue (list (cdr (variables layer)) (cdr (var-values layer))))))
-                  (cons (car (var-values layer)) (cadr (change-binding var newValue (list (cdr (variables layer)) (cdr (var-values layer)))))))))))
-                       
+      ((in? var (top-layer-variables s))
+        (cons (change-binding var newValue (top-layer s))
+              (state-remaining s)))
+      (else
+        (cons (top-layer s) 
+              (state-set-binding var newValue (state-remaining s)))))))
 
 (define state-lookup
   (lambda (var lis)
@@ -164,28 +161,13 @@
       ((equal? lis (layer-empty)) '())
       ((is-state? lis)
        (if (null? (state-lookup var (top-layer lis)))
-           (state-lookup var (cdr lis))
+           (state-lookup var (state-remaining lis))
            (state-lookup var (top-layer lis))))
       (else
-       (if (eq? var (car (variables lis)))
-           (unbox (car (var-values lis)))
-           (state-lookup var (list (cdr (variables lis)) (cdr (var-values lis)))))))))
+       (if (eq? var (car (layer-variables lis)))
+           (unbox (car (layer-values lis)))
+           (state-lookup var (layer-remaining lis)))))))
 
-(define is-declared
-  (lambda (var lis)
-    (cond
-      ((null? lis) #f)
-      ((equal? lis (layer-empty)) #f)
-      ((is-state? lis) (or (is-declared var (top-layer lis)) (is-declared var (cdr lis))))
-      ((eq? var (car (variables lis))) #t)
-      (else (is-declared var (list (cdr (variables lis)) (cdr (var-values lis))))))))
-       
-     
-
-(define is-state?
-  (lambda (s)
-    (and (not (null? (car s))) (list? (caar s)))))
-        
 (define state-add-layer
   (lambda (state)
     (cons '(() ()) state)))
@@ -194,19 +176,59 @@
   (lambda (state)
     (cdr state)))
 
-(define top-layer
-  (lambda (state)
-    (car state)))
 
-(define variables
+; Binding helpers
+
+(define change-binding
+  (lambda (var newValue layer)
+    (cond
+      ((equal? layer (layer-empty)) (layer-empty))
+      ((eq? var (car (layer-variables layer)))
+        (begin (set-box! (car (layer-values layer)) newValue) layer))
+      (else (list (cons (car (layer-variables layer))
+                        (car (change-binding var newValue (layer-remaining layer))))
+                  (cons (car (layer-values layer))
+                        (cadr (change-binding var newValue (layer-remaining layer)))))))))
+
+(define is-declared
+  (lambda (var lis)
+    (cond
+      ((null? lis) #f)
+      ((equal? lis (layer-empty)) #f)
+      ((is-state? lis) (or (is-declared var (top-layer lis))
+                           (is-declared var (state-remaining lis))))
+      ((eq? var (car (layer-variables lis))) #t)
+      (else (is-declared var (layer-remaining lis))))))
+
+(define is-state?
+  (lambda (s)
+    (and (not (null? (car s))) (list? (caar s)))))
+
+; top layer        
+(define top-layer
+  (lambda (state) (car state)))
+
+(define top-layer-variables
+ (lambda (state) (layer-variables (top-layer state))))
+
+(define top-layer-values
+  (lambda (state) (layer-values (top-layer state))))
+
+; layer
+(define layer-variables
   (lambda (layer) (car layer)))
 
-(define var-values
+(define layer-values
   (lambda (layer) (cadr layer)))
 
-(define remaining
+(define layer-remaining
   (lambda (state)
-    (list (cdr (variables state)) (cdr (var-values state)))))
+    (list (cdr (layer-variables state)) (cdr (layer-values state)))))
+
+; overall state
+(define state-remaining
+  (lambda (state) (cdr state)))
+
 
 ;;; State gotos
 
