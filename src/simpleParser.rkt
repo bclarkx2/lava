@@ -14,8 +14,8 @@
 ;
 ; The return value is a parse tree in list format
 
-;(load "lex.scm")
-(require "lex.scm")
+;(load "lex.rkt")
+(require "lex.rkt")
 
 (define parser
   (lambda (filename)

@@ -5,15 +5,7 @@
 (require xrepl)
 (require racket/trace)
 (require "../src/interpreter.scm")
-
-;;; helpers
-
-(define assert-err
- (lambda (file err)
-  (with-handlers ([(lambda (msg) (equal? msg err))
-                   (lambda (msg) #t)])
-    (interpret file))))
-
+(require "common.scm")
 
 ;;; tests
 
@@ -34,8 +26,8 @@
   (equal? (interpret "int2-files/4") 2)))
 
 (define test-1-5
- (lambda () #f))
-  ;;; (equal? (interpret "int2-files/5") #f)))
+ (lambda () 
+  (assert-err "int2-files/5" 'illegal-var-dereferencing)))
 
 (define test-1-6
  (lambda ()
@@ -58,22 +50,22 @@
   (equal? (interpret "int2-files/10") 789)))
 
 (define test-1-11
- (lambda () #f))
-  ;;; (assert-err
-  ;;;  "int2-files/11"
-  ;;;  'assign-before-declare)))
+ (lambda ()
+  (assert-err
+  "int2-files/11"
+  'illegal-var-dereferencing)))
 
 (define test-1-12
- (lambda () #f))
-  ;;; (assert-err
-  ;;;  "int2-files/12"
-  ;;;  'illegal-var-dereferencing)))
+ (lambda ()
+  (assert-err
+  "int2-files/12"
+  'illegal-var-dereferencing)))
 
 (define test-1-13
- (lambda () #f))
-  ;;; (assert-err
-  ;;;  "int2-files/13"
-  ;;;  'illegal-var-dereferencing)))
+ (lambda ()
+  (assert-err
+  "int2-files/13"
+  'illegal-break)))
 
 (define test-1-14
  (lambda ()
@@ -96,9 +88,11 @@
   (equal? (interpret "int2-files/18") 101)))
 
 (define test-1-19
- (lambda () #f))
-  ;;; (equal? (interpret "int2-files/19") 128)))
+ (lambda ()
+  (assert-err
+	"int2-files/19"
+	'illegal-throw)))
 
 (define test-1-20
-(lambda ()
-(equal? (interpret "int2-files/20") 21)))
+	(lambda ()
+		(equal? (interpret "int2-files/20") 21)))

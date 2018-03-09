@@ -5,13 +5,11 @@
 
 #lang racket
 (provide (all-defined-out))
-(require "simpleParser.scm")
+(require "simpleParser.rkt")
 
 (define interpret
   (lambda (filename)
-    (call/cc
-     (lambda (return)
-       (state (parser filename) (state-empty) default-brk default-cont return default-throw)))))
+    (top-level-state (parser filename))))
 
 
 ;;; General helpers
@@ -64,6 +62,7 @@
           ((null? (cdr e)) (value-evaluate (car e) s))
           ((int-operator? (operator e)) (value-int e s))
           ((bool-operator? (operator e)) (value-bool e s))
+          ((eq? '= (operator e)) (operand2 e s))
           (else (error 'badop "Undefined operator")))
         (cond
           ((number? e) e)
@@ -221,7 +220,8 @@
            (state-empty)
            default-brk
            default-cont
-           return)))))
+           return
+           default-throw)))))
   
 
 (define state
@@ -230,6 +230,7 @@
 
       ; null and return statements do not alter state
       ((null? stmt) s)
+      ((not (list? stmt)) s)
       ((eq? (keyword stmt) 'return) (handle-return stmt s return))
 
       ; may be a list of statements
@@ -248,6 +249,12 @@
       ((eq? (keyword stmt) 'continue) (cont s))
       ((eq? (keyword stmt) 'throw) (handle-throw stmt s throw))
 
+      ; assignment
+      ((or (int-operator? (keyword stmt)) (bool-operator? (keyword stmt)))
+       (if (unary? stmt)
+           (state (cdr stmt) s brk cont return throw)
+           (state (varname stmt) (state (varexpr stmt) s brk cont return throw) brk cont return throw)))
+      
       (else s))))
 
 (define keyword
