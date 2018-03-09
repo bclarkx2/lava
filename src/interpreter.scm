@@ -241,9 +241,18 @@
       (else
        (if (eq? var (car (variables lis)))
            (unbox (car (var-values lis)))
-           (state-lookup var (list
-                                  (cons (car (variables lis)) (car (state-lookup var (list (cdr (variables lis)) (cdr (var-values lis))))))
-                                  (cons (car (var-values lis)) (cadr (state-lookup var (list (cdr (variables lis)) (cdr (var-values lis)))))))))))))
+           (state-lookup var (list (cdr (variables lis)) (cdr (var-values lis)))))))))
+
+(define is-declared
+  (lambda (var lis)
+    (cond
+      ((null? lis) #f)
+      ((equal? lis (layer-empty)) #f)
+      ((is-state lis) (or (is-declared var (top-layer lis)) (is-declared var (cdr lis))))
+      ((eq? var (car (variables lis))) #t)
+      (else (is-declared var (list (cdr (variables lis)) (cdr (var-values lis))))))))
+       
+     
 
 (define is-state
   (lambda (s)
@@ -338,12 +347,12 @@
 
 (define state-assign
   (lambda (stmt s)
-    (if (in? (varname stmt) (variables s))
-    (state-set-binding
-     (varname stmt)
-     (value-evaluate (varexpr stmt) s null-value null-value null-value null-value)
-     s)
-    (raise 'assign-before-declare))))
+    (if (is-declared (varname stmt) s)
+        (state-set-binding
+         (varname stmt)
+         (value-evaluate (varexpr stmt) s null-value null-value null-value null-value)
+         s)
+        (raise 'assign-before-declare))))
 
 (define varname
   (lambda (stmt) (cadr stmt)))
