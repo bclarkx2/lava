@@ -20,7 +20,7 @@
        (= x 20))
       ()
       ()))
-   '((x) (20)))))
+   '(((x) (20))))))
 
 (define test-1-2
  (lambda ()
@@ -30,7 +30,7 @@
       (= x 20)
       ()
       (finally (= x 30))))
-   '((x) (30)))))
+   '(((x) (30))))))
 
 (define test-1-3
  (lambda ()
@@ -43,7 +43,7 @@
        (catch (e)
         (= x e))
        ()))
-   '((x) (3)))))
+   '(((x) (3))))))
 
 (define test-1-4
  (lambda ()
@@ -57,7 +57,7 @@
        (= x e))
       (finally
        (= x 40))))
-    '((x) (40)))))
+    '(((x) (40))))))
 
 ; return in try w/ finally
 (define test-1-5
@@ -71,7 +71,7 @@
      ()  
      (finally
       (= x 30))))
-   '((x) (30)))))
+   '(((x) (30))))))
 
 ; try-finally inside while loop; break inside try
 (define test-2-1
@@ -86,7 +86,7 @@
       ()  
       (finally
        (= x 99))))))
-   '((x) (99)))))
+   '(((x) (99))))))
 
 ; try-finally in while; break in catch
 (define test-2-2
@@ -104,7 +104,7 @@
         (break)))
       (finally
        (= x 99))))))
-   '((x) (99)))))
+   '(((x) (99))))))
 
 ; throw in catch block
 (define test-3-1
