@@ -425,7 +425,7 @@
   (state-remove-layer
    (state (block-contents stmt) 
           (state-add-layer s)
-          brk cont return throw))))
+          (lambda (v) (brk (state-remove-layer v))) (lambda (v) (cont (state-remove-layer v))) return throw))))
 
 (define block-contents (lambda (stmt) (cdr stmt)))
 
