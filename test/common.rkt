@@ -5,7 +5,7 @@
 ;;; requirements
 (require xrepl)
 (require racket/trace)
-(require "../src/interpreter.scm")
+(require "../src/interpreter.rkt")
 
 ;;; utilities
 (define assert-err

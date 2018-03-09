@@ -5,8 +5,8 @@
 ;;; requirements
 (require xrepl)
 (require racket/trace)
-(require "../src/interpreter.scm")
-(require "common.scm")
+(require "../src/interpreter.rkt")
+(require "common.rkt")
 
 ;;; test cases
 
