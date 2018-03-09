@@ -161,7 +161,7 @@
   (lambda (var lis)
     (cond
       ((null? lis) (raise 'illegal-var-dereferencing))
-      ((equal? lis (state-empty)) (raise 'illegal-var-deferencing))
+      ((equal? lis (state-empty)) (raise 'illegal-var-dereferencing))
       ((equal? lis (layer-empty)) '())
       ((is-state? lis)
        (if (null? (state-lookup var (top-layer lis)))

@@ -42,7 +42,7 @@
 (define assert-interpret-err
   (lambda (file err)
     (with-handlers ([(lambda (msg) (equal? msg err))
-                   (lambda (msg) #t)])
+                     (lambda (msg) #t)])
      (interpret-raise file))))
 
 (define assert-state-err

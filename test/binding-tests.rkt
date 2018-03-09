@@ -5,28 +5,22 @@
 (require xrepl)
 (require racket/trace)
 (require "../src/interpreter.rkt")
-
-(define assert-err
- (lambda (file err)
-  (with-handlers ([(lambda (msg) (equal? msg err))
-                   (lambda (msg) #t)])
-    (interpret file))))
-
+(require "common.rkt")
 
 ;;; tests
 
 (define test-1-1
  (lambda ()
-  (equal? 4 (interpret "binding-files/reverse-declare-define-order"))))
+  (assert 4 (interpret-raise "binding-files/reverse-declare-define-order"))))
 
 (define test-1-2
  (lambda ()
-  (assert-err
+  (assert-interpret-err
    "binding-files/declare-before-use"
    'illegal-var-dereferencing)))
 
 (define test-1-3
  (lambda ()
-  (assert-err 
+  (assert-interpret-err 
    "binding-files/redefine"
    'illegal-var-use)))
