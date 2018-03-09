@@ -16,7 +16,7 @@
    '((var x 1)
      (begin
       (= x 2)))
-   '((x) (2)))))
+   '(((x) (2))))))
 
 (define test-1-2
  (lambda ()
@@ -25,7 +25,7 @@
      (begin
       (= x 2)
       (= x 3)))
-   '((x) (3)))))
+   '(((x) (3))))))
 
 (define test-1-3
  (lambda ()
@@ -35,7 +35,7 @@
       (begin
        (= x (- x 1))
        (break))))
-   '((x) (9)))))
+   '(((x) (9))))))
 
 (define test-1-4
  (lambda ()
@@ -46,7 +46,7 @@
        (= x (- x 1))
        (continue)
        (break))))
-   '((x) (0)))))
+   '(((x) (0))))))
 
 (define test-1-5
  (lambda ()
@@ -56,7 +56,7 @@
        (begin
         (= x (- x 1))
         (if (< x 6) (break) (continue)))))
-   '((x) (5)))))
+   '(((x) (5))))))
 
 (define test-1-6
  (lambda ()
