@@ -107,20 +107,21 @@
 (define resolve-params
  (lambda (func-env cur-state formal actual)
   (cond
-   ((and (null? func-env) (null? cur-state))
+   ((and (null? formal) (null? actual))
     func-env)
-   ((xor (null? func-env) (null? cur-state))
+   ((xor (null? formal) (null? actual))
     (raise 'parameter-mismatch))
    (else
-    (resolve-params (resolve-param cur-state formal actual)
+    (resolve-params (resolve-param func-env cur-state formal actual)
                     cur-state
                     (cdr formal)
                     (cdr actual))))))
 
 (define resolve-param
- (lambda (cur-state formal actual)
+ (lambda (func-env cur-state formal actual)
   (state-add-binding (car formal)
-                     (value (car actual) cur-state))))
+                     (value (car actual) cur-state)
+                     func-env)))
 
 (define actual-params
  (lambda (e)
