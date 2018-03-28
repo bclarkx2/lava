@@ -52,6 +52,10 @@
       ((eq? '! (operator e)) (not (value (operand1 e s) s)))
       (else (error 'badop "Undefined bool operator")))))
 
+(define value-func
+  (lambda (e s)
+    0))
+
 (define value
   (lambda (e s)
     (if (list? e)
@@ -59,6 +63,7 @@
           ((null? (cdr e)) (value (car e) s))
           ((int-operator? (operator e)) (value-int e s))
           ((bool-operator? (operator e)) (value-bool e s))
+          ((eq? 'funcall (operator e)) (value-func e s))
           ((eq? '= (operator e)) (operand2 e s))
           (else (error 'badop "Undefined operator")))
         (cond
