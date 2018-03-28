@@ -52,9 +52,6 @@
       ((eq? '! (operator e)) (not (value (operand1 e s) s)))
       (else (error 'badop "Undefined bool operator")))))
 
-(define value-func
-  (lambda (e s)
-    0))
 
 (define value
   (lambda (e s)
@@ -73,7 +70,30 @@
           ((eq? 'false e) #f)
           (else (state-lookup e s))))))
 
-;abstractions for value
+(define value-func
+ (lambda (e s)
+  (call/cc (lambda (return)
+   (state (func-body e)
+          (func-env e)
+          return,
+          default-brk,
+          default-cont,
+          default-throw)))))
+
+; abstractions for value
+
+(define func-params (lambda (e) '()))
+(define func-body (lambda (e) '()))
+(define func-env (lambda (e) '()))
+  
+(define closure
+ (lambda (e)
+  (state-lookup (func-name e))))
+
+(define func-name
+ (lambda (e)
+  (cadr e)))
+
 (define operator
   (lambda (e)
     (car e)))
