@@ -73,12 +73,13 @@
 (define value-func
  (lambda (e s)
   (call/cc (lambda (return)
-   (state (func-body e)
-          (new-func-env e s)
-          return
-          default-brk
-          default-cont
-          default-throw)))))
+   (state-remove-layer
+    (state (func-body e)
+           (new-func-env e s)
+           return
+           default-brk
+           default-cont
+           default-throw)))))
 
 ; abstractions for value
 
