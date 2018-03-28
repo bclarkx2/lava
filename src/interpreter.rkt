@@ -82,9 +82,12 @@
 
 ; abstractions for value
 
+; these depend on format of closure
+; will likely be replaced by Kaius's functions
 (define formal-params (lambda (e) '())) ; STUB
 (define func-body (lambda (e) '()))     ; STUB
 (define func-env (lambda (e) '()))      ; STUB
+
 (define func-name
  (lambda (e)
   (cadr e)))
