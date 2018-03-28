@@ -74,7 +74,7 @@
  (lambda (e s)
   (call/cc (lambda (return)
    (state (func-body e)
-          (func-env e)
+          (new-func-env e s)
           return,
           default-brk,
           default-cont,
@@ -82,17 +82,31 @@
 
 ; abstractions for value
 
-(define func-params (lambda (e) '()))
-(define func-body (lambda (e) '()))
-(define func-env (lambda (e) '()))
-  
+(define formal-params (lambda (e) '())) ; STUB
+(define func-body (lambda (e) '()))     ; STUB
+(define func-env (lambda (e) '()))      ; STUB
+(define func-name
+ (lambda (e)
+  (cadr e)))
+
 (define closure
  (lambda (e)
   (state-lookup (func-name e))))
 
-(define func-name
+(define new-func-env
+ (lambda (e s)
+  (resolve-params (state-add-layer (func-env e))
+                  s
+                  (formal-params e)
+                  (actual-params e)
+
+(define resolve-params
+ (lambda (func-env cur-state formal actual)
+  0))
+
+(define actual-params
  (lambda (e)
-  (cadr e)))
+  (cddr e)))
 
 (define operator
   (lambda (e)
