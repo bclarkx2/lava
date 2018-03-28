@@ -76,9 +76,9 @@
    (state-remove-layer
     (state (func-body e)
            (new-func-env e s)
-           return
            default-brk
            default-cont
+           return
            default-throw))))))
 
 ; abstractions for value
