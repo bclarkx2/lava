@@ -86,19 +86,19 @@
 ; will likely be replaced by Kaius's functions
 (define formal-params (lambda (e) '())) ; STUB
 (define func-body (lambda (e) '()))     ; STUB
-(define func-env (lambda (e) '()))      ; STUB
+(define func-env (lambda (e s) '()))      ; STUB
 
 (define func-name
  (lambda (e)
   (cadr e)))
 
 (define closure
- (lambda (e)
-  (state-lookup (func-name e))))
+ (lambda (e s)
+  (state-lookup (func-name e) s)))
 
 (define new-func-env
  (lambda (e s)
-  (resolve-params (state-add-layer (func-env e))
+  (resolve-params (state-add-layer (func-env e s))
                   s
                   (formal-params e)
                   (actual-params e))))
