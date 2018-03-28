@@ -75,9 +75,9 @@
   (call/cc (lambda (return)
    (state (func-body e)
           (new-func-env e s)
-          return,
-          default-brk,
-          default-cont,
+          return
+          default-brk
+          default-cont
           default-throw)))))
 
 ; abstractions for value
@@ -98,7 +98,7 @@
   (resolve-params (state-add-layer (func-env e))
                   s
                   (formal-params e)
-                  (actual-params e)
+                  (actual-params e))))
 
 (define resolve-params
  (lambda (func-env cur-state formal actual)
