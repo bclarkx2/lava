@@ -85,9 +85,12 @@
 
 ; these depend on format of closure
 ; will likely be replaced by Kaius's functions
-(define formal-params (lambda (e) '())) ; STUB
-(define func-body (lambda (e) '()))     ; STUB
-(define func-env (lambda (e s) '()))      ; STUB
+(define formal-params (lambda (e) '()))
+(define func-body (lambda (e) '()))
+(define func-env (lambda (e s) '()))
+(define set-formal-params! (lambda (new-def) (set! formal-params new-def)))
+(define set-func-body! (lambda (new-def) (set! func-body new-def)))
+(define set-func-env! (lambda (new-def) (set! func-env new-def)))
 
 (define func-name
  (lambda (e)
