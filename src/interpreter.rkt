@@ -225,6 +225,10 @@
       ((eq? var (car (layer-variables lis))) #t)
       (else (is-declared var (layer-remaining lis))))))
 
+(define is-declared-top-layer
+ (lambda (var state)
+  (is-declared var (top-layer state))))
+
 (define state-add-layer
   (lambda (state)
     (cons '(() ()) state)))
@@ -404,7 +408,7 @@
 
 (define state-var
   (lambda (stmt s brk cont return throw)
-    (if (is-declared (varname stmt) s)
+    (if (is-declared-top-layer (varname stmt) s)
         (raise 'illegal-var-use)
         (if (has-initialization stmt)
             (state-add-binding
