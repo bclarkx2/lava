@@ -5,7 +5,7 @@
 
 #lang racket
 (provide (all-defined-out))
-(require "simpleParser.rkt")
+(require "functionParser.rkt")
 
 ; top-level interpret function -- throws errors
 (define interpret
@@ -92,9 +92,14 @@
 (define set-func-body! (lambda (new-def) (set! func-body new-def)))
 (define set-func-env! (lambda (new-def) (set! func-env new-def)))
 
-(define func-name
- (lambda (e)
-  (cadr e)))
+;; Function
+(define state-function-declaration
+  (lambda (exp s)
+    (state-add-binding (func-name exp) (list (func-args exp) (func-def exp)) s)))
+    
+(define func-name (lambda (exp) (cadr (exp))))
+(define func-args (lambda (exp) (caddr (exp))))
+(define func-def (lambda (exp) (cadddr (exp))))
 
 (define closure
  (lambda (e s)
@@ -423,7 +428,6 @@
 
   (define initialization
     (lambda (stmt) (caddr stmt)))
-
 
 ;; While
 
