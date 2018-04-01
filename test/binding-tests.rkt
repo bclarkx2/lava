@@ -9,18 +9,10 @@
 
 ;;; tests
 
-(define test-1-1
- (lambda ()
-  (assert 4 (interpret-raise "binding-files/reverse-declare-define-order"))))
+(assert (test-interpret "binding-files/reverse-declare-define-order") 4)
 
-(define test-1-2
- (lambda ()
-  (assert-interpret-err
-   "binding-files/declare-before-use"
-   'illegal-var-dereferencing)))
+(assert-interpret-err "binding-files/declare-before-use"
+                      'illegal-var-dereferencing)
 
-(define test-1-3
- (lambda ()
-  (assert-interpret-err 
-   "binding-files/redefine"
-   'illegal-var-use)))
+(assert-interpret-err "binding-files/redefine"
+                      'illegal-var-use)

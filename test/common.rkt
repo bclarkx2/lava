@@ -8,7 +8,7 @@
 (require racket/pretty)
 (require "../src/interpreter.rkt")
 (require "../src/functionParser.rkt")
-
+(require rackunit)
 
 ;;; utilities
 
@@ -22,9 +22,8 @@
     (pretty-print result)))))
 
 (define assert
- (lambda (result expected)
-   (print-results (equal? result expected)
-                  expected result)))
+ (lambda (result expected [msg ""])
+  (check-equal? result expected msg)))
 
 (define unbox-all
   (lambda (s)
@@ -59,29 +58,30 @@
   (assert err
           (test-interpret-text text))))
   
+(define calc-state
+ (lambda (stmt-tree)
+  (with-handlers ([(lambda (msg) 'no-problem)
+                   (lambda (msg) msg)])
+   (unbox-all (call/cc (lambda (return)
+     (state stmt-tree
+            (state-empty)
+            default-brk
+            default-cont
+            return
+            default-throw)))))))
 
 ;;; Asserts
 
 (define assert-interpret-err
   (lambda (file err)
-    (with-handlers ([(lambda (msg) (equal? msg err))
-                     (lambda (msg) #t)])
-     (test-interpret file))))
+    (assert err (test-interpret file))))
 
 (define assert-state-err
  (lambda (stmt-tree err)
-  (with-handlers ([(lambda (msg) (equal? msg err))
-                   (lambda (msg) #t)])
-   (assert-state stmt-tree err))))
+   (assert (calc-state stmt-tree) err)))
 
 (define assert-state
  (lambda (stmt-tree expected)
   (assert
-   (unbox-all (call/cc (lambda (return)
-    (state stmt-tree
-           (state-empty)
-           default-brk
-           default-cont
-           return
-           default-throw))))
+   (calc-state stmt-tree)
    expected)))

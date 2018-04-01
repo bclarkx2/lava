@@ -1,96 +1,31 @@
 #! /usr/bin/env bash
 
-# starting question
 if [[ $1 == "-h" ]] || [[ $1 == "--help" ]] ; then
     printf \
 "Test harness for Scheme unit tests.
-Usage: ./run-tests <test_file>
-Usage: ./run-tests <test_file> -q <question_num>\n"
+Usage: ./run-tests <test_file>\n"
     exit 0
-elif [[ -z $1 ]] ; then
+elif [[ -z ${1+x} ]] ; then                     # no args
     printf "Must supply test_file!\n"
     exit 1
-elif [[ $2 == "-q" ]] ; then
-    test_file=$1
-    question_num=$3
-    if [[ -z $4 ]] ; then
-        starting_test=1
-    else
-        starting_test=$4
-    fi
-    stopping_num=$(($question_num + 1))
-else
-    test_file=$1
-    question_num=1
-    starting_test=1
-    stopping_num=-1
+elif [[ -z ${2+x} ]] ; then                     # only 1
+    test_file="$1"
+    raco test --heartbeat "$test_file"
+# else                                            # one and two
+#     test_file="$1"
+
+#     if [[ -z ${3+x} ]] ; then
+#         test_case="$2"
+#     else
+#         test_case="$(seq -s " " $2 $3)"
+#     fi
+#     test_case_arg="'($test_case)"
+
+#     racket -e "(require \"$test_file\")
+#                (require rackunit \"../src/interpreter.rkt\")
+#                (require \"common.rkt\")
+#                (display \"\n\")
+#                (display \"RESULT: $test_file:\n\")
+#                (run-tests $test_case_arg)"
 fi
-
-# test info
-printf "\n"
-printf "Test: %s\n" $test_file
-
-# colorss
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-reset=$(tput sgr0)
-
-
-test_exists=0
-question_exists=0
-
-overall_pass=true
-num_pass=0
-num_fail=0
-
-while [[ $question_exists -eq 0 ]] &&
-      [[ $question_num -ne $stopping_num ]] ;
-do
-
-    printf "\n=============\n"
-
-    ((test_num = 1 + ($starting_test - 1) ))
-    while [[ $test_exists -eq 0 ]] ;
-    do
-        result=$(racket -e "(require \"$test_file\")
-                            (test-$question_num-$test_num)" \
-                      2>/dev/null)
-        test_exists=$?
-
-        if [[ test_exists -eq 0 ]] ; then
-            if [[ "$result" == "#f"* ]] ; then
-                format_result="${red}$result${reset}"
-                overall_pass=false
-                ((num_fail++))
-            else
-                format_result="${green}$result${reset}"
-                ((num_pass++))
-            fi
-            echo "test-$question_num-$test_num: $format_result"
-            ((test_num++))
-        fi
-
-    done
-
-    # if the first didn't exist, the question doesn't exist
-    if [[ $test_num -eq 1 ]] ; then
-        question_exists=1
-
-    # otherwise, go to next question
-    else
-        ((question_num++))
-        ((test_exists=0))
-    fi
-
-done
-
-case $overall_pass in
-    true)
-        printf "Overall: ${green}pass${reset}" ;;
-    false)
-        printf "Overall: ${red}fail${reset}" ;;
-esac
-
-percent=$(bc -l <<< "scale=1; 100 * $num_pass / ($num_pass + $num_fail)")
-
-printf " ($percent%%)\n\n"
+exit
