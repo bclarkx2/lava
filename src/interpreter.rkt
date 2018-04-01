@@ -17,7 +17,7 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename)
-     (value (list 'funcall 'main) (global-first-pass filename (state-empty)))))
+     (value (list 'funcall 'main) (global-first-pass (parser filename) (state-empty)))))
 
 
 ;;; Value
@@ -85,13 +85,13 @@
 
 (define call-func-params
   (lambda (e s)
-    (func-params (closure e s))))
+    (car (closure e s))))
 (define call-func-def
   (lambda (e s)
-    (func-def (closure e s))))
+    (cadr (closure e s))))
 (define call-func-env-procedure
   (lambda (e s)
-    (caadr (closure e s))))
+    (caddr (closure e s))))
 (define call-func-env
   (lambda (e s)
     ((call-func-env-procedure e s) s)))
@@ -157,13 +157,13 @@
 
 (define closure
  (lambda (e s)
-  (unbox (state-lookup (func-name e) s))))
+  (state-lookup (func-name e) s)))
 
 (define new-func-env
  (lambda (e s)
   (resolve-params (state-add-layer (call-func-env e s))
                   s
-                  (call-func-params e)
+                  (call-func-params e s)
                   (actual-params e))))
 
 (define resolve-params
