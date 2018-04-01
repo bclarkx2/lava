@@ -5,7 +5,7 @@
 
 #lang racket
 (provide (all-defined-out))
-(require "simpleParser.rkt")
+(require "functionParser.rkt")
 
 ; top-level interpret function -- throws errors
 (define interpret
@@ -74,8 +74,13 @@
  (lambda (e s)
   (call/cc (lambda (return)
    (state-remove-layer
+<<<<<<< HEAD
     (state (func-body e)
            (function-first-pass (func-body e) (new-func-env e s))
+=======
+    (state (call-func-def e s)
+           (new-func-env e s)
+>>>>>>> bd49d4fbbb035689822bc7429c06cf96a6041f7f
            default-brk
            default-cont
            return
@@ -83,15 +88,35 @@
 
 ; abstractions for value
 
-; these depend on format of closure
-; will likely be replaced by Kaius's functions
-(define formal-params (lambda (e) '()))
-(define func-body (lambda (e) '()))
-(define func-env (lambda (e s) '()))
-(define set-formal-params! (lambda (new-def) (set! formal-params new-def)))
-(define set-func-body! (lambda (new-def) (set! func-body new-def)))
-(define set-func-env! (lambda (new-def) (set! func-env new-def)))
+(define call-func-params
+  (lambda (e s)
+    (func-params (closure e s))))
+(define call-func-def
+  (lambda (e s)
+    (func-def (closure e s))))
+(define call-func-env-procedure
+  (lambda (e s)
+    (caadr (closure e s))))
+(define call-func-env
+  (lambda (e s)
+    ((call-func-env-procedure e s) s)))
 
+;; Function
+(define state-function-declaration
+  (lambda (exp s)
+    (state-add-binding (func-name exp) (list
+                                        (func-params exp)
+                                        (func-def exp)
+                                        (environment s))
+                                        s)))
+
+(define layer-count
+  (lambda (s)
+    (if (equal? (state-empty) s)
+        1
+        (+ 1 (layer-count (state-remaining s))))))
+
+<<<<<<< HEAD
 (define global-first-pass
   (lambda (stmt-list s)
     (cond
@@ -121,16 +146,33 @@
 (define func-name
  (lambda (e)
   (cadr e)))
+=======
+(define environment
+  (lambda (s)
+    (lambda (call-state)
+      (subenvironment (layer-count s) (reverse call-state)))))
+
+(define subenvironment
+  (lambda (numLayers s)
+    (cond
+      ((eq? 1 numLayers) (cons (top-layer s) '()))
+      ((equal? (state-empty) s) (raise 'Illegal-call))
+      (else (cons (top-layer s) (subenvironment (- numLayers 1) (cdr s)))))))
+
+(define func-name (lambda (exp) (cadr exp)))
+(define func-params (lambda (exp) (caddr exp)))
+(define func-def (lambda (exp) (cadddr exp)))
+>>>>>>> bd49d4fbbb035689822bc7429c06cf96a6041f7f
 
 (define closure
  (lambda (e s)
-  (state-lookup (func-name e) s)))
+  (unbox (state-lookup (func-name e) s))))
 
 (define new-func-env
  (lambda (e s)
-  (resolve-params (state-add-layer (func-env e s))
+  (resolve-params (state-add-layer (call-func-env e s))
                   s
-                  (formal-params e)
+                  (call-func-params e)
                   (actual-params e))))
 
 (define resolve-params
@@ -451,7 +493,6 @@
 
   (define initialization
     (lambda (stmt) (caddr stmt)))
-
 
 ;; While
 
