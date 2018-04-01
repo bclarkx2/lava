@@ -17,7 +17,7 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename)
-     (top-level-state (parser filename))))
+     (value (list 'funcall 'main) (global-first-pass filename (state-empty)))))
 
 
 ;;; Value
@@ -75,7 +75,7 @@
   (call/cc (lambda (return)
    (state-remove-layer
     (state (func-body e)
-           (new-func-env e s)
+           (function-first-pass (func-body e) (new-func-env e s))
            default-brk
            default-cont
            return
@@ -92,6 +92,32 @@
 (define set-func-body! (lambda (new-def) (set! func-body new-def)))
 (define set-func-env! (lambda (new-def) (set! func-env new-def)))
 
+(define global-first-pass
+  (lambda (stmt-list s)
+    (cond
+      ((null? stmt-list) s)
+      ((not (list? stmt-list)) s)
+  
+      ; may be a list of statements
+      ((list? (keyword stmt-list)) (global-first-pass (keyword stmt-list) s))
+
+      ; remaining operations delegated to helpers
+      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s)) 
+      ((eq? (keyword stmt-list) 'var) (state-var stmt-list default-brk default-cont default-return default-throw))
+      
+      (else s))))
+
+(define function-first-pass
+  (lambda (stmt-list s)
+    (cond
+      ((null? stmt-list) s)
+      ((not (list? stmt-list) s))
+
+      ((list? (keyword stmt-list)) (function-first-pass (keyword stmt-list) s))
+
+      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
+      (else s))))
+    
 (define func-name
  (lambda (e)
   (cadr e)))
@@ -324,6 +350,8 @@
       ((eq? (keyword stmt) 'while) (state-while stmt s brk cont return throw))
       ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw))
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
+      ((eq? (keyword stmt) 'function) s)
+      ((eq? (keyword stmt) 'funcall) (begin ((value stmt s) s)))
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
