@@ -28,7 +28,7 @@
 (define fallback-parser
   (lambda (filename)
     (with-handlers ([(lambda (msg) 'fine)
-                    (lambda (msg) (simple-parser filename))])
+                     (lambda (msg) (simple-parser filename))])
       (parser filename))))
 
 
@@ -80,27 +80,27 @@
 (define value
   (lambda (e s throw)
     (if (list? e)
-        (cond
-          ((null? (cdr e)) (value (car e) s throw))
-          ((int-operator? (operator e)) (value-int e s throw))
-          ((bool-operator? (operator e)) (value-bool e s throw))
-          ((eq? 'funcall (operator e)) (value-func e s throw))
-          ((eq? '= (operator e)) (operand2 e s throw))
-          (else (error 'badop "Undefined operator")))
-        (cond
-          ((number? e) e)
-          ((boolean? e) e)
-          ((eq? 'true e) #t)
-          ((eq? 'false e) #f)
-          (else (state-lookup e s))))))
+      (cond
+        ((null? (cdr e)) (value (car e) s throw))
+        ((int-operator? (operator e)) (value-int e s throw))
+        ((bool-operator? (operator e)) (value-bool e s throw))
+        ((eq? 'funcall (operator e)) (value-func e s throw))
+        ((eq? '= (operator e)) (operand2 e s throw))
+        (else (error 'badop "Undefined operator")))
+      (cond
+        ((number? e) e)
+        ((boolean? e) e)
+        ((eq? 'true e) #t)
+        ((eq? 'false e) #f)
+        (else (state-lookup e s))))))
 
 
 ;; Value helpers
 
 (define mk-safe-throw
- (lambda (throw call-state)
-  (lambda (throw-state val)
-   (throw call-state val))))
+  (lambda (throw call-state)
+   (lambda (throw-state val)
+    (throw call-state val))))
 
 (define call-func-params (lambda (e s) (car (closure e s))))
 (define call-func-def (lambda (e s) (cadr (closure e s))))
@@ -111,40 +111,40 @@
     ((call-func-env-procedure e s) s)))
 
 (define closure
- (lambda (e s)
-  (state-lookup (func-name e) s)))
+  (lambda (e s)
+   (state-lookup (func-name e) s)))
 
 (define new-func-env
- (lambda (e s throw)
-  (resolve-params (state-add-layer (call-func-env e s))
-                  s
-                  (call-func-params e s)
-                  (actual-params e)
-                  throw)))
+  (lambda (e s throw)
+   (resolve-params (state-add-layer (call-func-env e s))
+                   s
+                   (call-func-params e s)
+                   (actual-params e)
+                   throw)))
 
 (define resolve-params
- (lambda (func-env cur-state formal actual throw)
-  (cond
-   ((and (null? formal) (null? actual))
-    func-env)
-   ((xor (null? formal) (null? actual))
-    (raise 'parameter-mismatch))
-   (else
-    (resolve-params (resolve-param func-env cur-state formal actual throw)
-                    cur-state
-                    (cdr formal)
-                    (cdr actual)
-                    throw)))))
+  (lambda (func-env cur-state formal actual throw)
+    (cond
+      ((and (null? formal) (null? actual))
+       func-env)
+      ((xor (null? formal) (null? actual))
+       (raise 'parameter-mismatch))
+      (else
+       (resolve-params (resolve-param func-env cur-state formal actual throw)
+                       cur-state
+                       (cdr formal)
+                       (cdr actual)
+                       throw)))))
 
 (define resolve-param
- (lambda (func-env cur-state formal actual throw)
-  (state-add-binding (car formal)
-                     (value (car actual) cur-state throw)
-                     func-env)))
+  (lambda (func-env cur-state formal actual throw)
+    (state-add-binding (car formal)
+                       (value (car actual) cur-state throw)
+                       func-env)))
 
 (define actual-params
- (lambda (e)
-  (cddr e)))
+  (lambda (e)
+    (cddr e)))
 
 (define operator
   (lambda (e)
