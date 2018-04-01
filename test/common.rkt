@@ -7,6 +7,7 @@
 (require racket/trace)
 (require racket/pretty)
 (require "../src/interpreter.rkt")
+(require "../src/functionParser.rkt")
 
 
 ;;; utilities
@@ -37,12 +38,27 @@
         (list (cons (car (layer-variables s)) (car (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s))))))
               (cons (unbox (car (layer-values s))) (cadr (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s)))))))))))
                        
-
 (define test-interpret
  (lambda (filename)
    (with-handlers ([(lambda (msg) 'no-problem)
                     (lambda (msg) msg)])
     (interpret-raise filename))))
+
+(define test-interpret-text
+ (lambda (text)
+  (begin0
+   (test-interpret
+    (let ([out (open-output-file ".data" #:exists 'replace)])
+     (begin (display text out)
+            (close-output-port out)
+            ".data")))
+   (delete-file ".data"))))
+
+(define assert-err-test-interpret-text
+ (lambda (text err)
+  (assert err
+          (test-interpret-text text))))
+  
 
 ;;; Asserts
 
