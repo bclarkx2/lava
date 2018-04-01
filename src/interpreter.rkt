@@ -550,7 +550,7 @@
     (state-add-binding (func-name exp) (list
                                         (func-params exp)
                                         (func-def exp)
-                                        (environment s))
+                                        (mk-environment-func s))
                                         s)))
 
 (define layer-count
@@ -559,7 +559,7 @@
         1
         (+ 1 (layer-count (state-remaining s))))))
 
-(define environment
+(define mk-environment-func
   (lambda (s)
     (lambda (call-state)
       (subenvironment (layer-count s) (reverse call-state)))))
