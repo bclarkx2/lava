@@ -1,6 +1,6 @@
 ; If you are using racket instead of scheme, uncomment these two lines, comment the (load "lex.scm") line and uncomment the (require "lex.scm") line
 #lang racket
-(provide (all-defined-out))
+(provide simple-parser)
 
 ; A simple parser for a Java-ish language
 ; EECS 345: Programming Language Concepts
@@ -17,12 +17,12 @@
 ;(load "lex.rkt")
 (require "lex.rkt")
 
-(define parser
+(define simple-parser
   (lambda (filename)
     (begin (start-lex filename)
            (let ((parse-tree (program-parse)))
              (end-lex)
-             parse-tree))))
+             (list 'function 'main '() parse-tree)))))
 
 ;===============================================
 ; The recursive descent parser

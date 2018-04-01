@@ -6,6 +6,7 @@
 #lang racket
 (provide (all-defined-out))
 (require "functionParser.rkt")
+(require "simpleParser.rkt")
 
 ; top-level interpret function -- throws errors
 (define interpret
@@ -18,8 +19,17 @@
 (define interpret-raise
   (lambda (filename)
      (value (list 'funcall 'main)
-            (state-global-first-pass (parser filename) (state-empty))
+            (state-global-first-pass (fallback-parser filename)
+                                     (state-empty))
             default-throw)))
+
+; fallback that tries to parse with v3 parser,
+; and falls back to v2 parser in case of failure
+(define fallback-parser
+  (lambda (filename)
+    (with-handlers ([(lambda (msg) 'fine)
+                    (lambda (msg) (simple-parser filename))])
+      (parser filename))))
 
 
 ;;; Value

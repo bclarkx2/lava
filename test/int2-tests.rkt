@@ -11,19 +11,19 @@
 
 (define test-1-1
  (lambda ()
-  (assert (interpret-raise "int2-files/1") 20)))
+  (assert (test-interpret "int2-files/1") 20)))
 
 (define test-1-2
  (lambda ()
-  (assert (interpret-raise "int2-files/2") 164)))
+  (assert (test-interpret "int2-files/2") 164)))
 
 (define test-1-3
  (lambda ()
-  (assert (interpret-raise "int2-files/3") 32)))
+  (assert (test-interpret "int2-files/3") 32)))
 
 (define test-1-4
  (lambda ()
-  (assert (interpret-raise "int2-files/4") 2)))
+  (assert (test-interpret "int2-files/4") 2)))
 
 (define test-1-5
  (lambda () 
@@ -33,23 +33,23 @@
 
 (define test-1-6
  (lambda ()
-  (assert (interpret-raise "int2-files/6") 25)))
+  (assert (test-interpret "int2-files/6") 25)))
 
 (define test-1-7
  (lambda ()
-  (assert (interpret-raise "int2-files/7") 21)))
+  (assert (test-interpret "int2-files/7") 21)))
 
 (define test-1-8
  (lambda ()
-  (assert (interpret-raise "int2-files/8") 6)))
+  (assert (test-interpret "int2-files/8") 6)))
 
 (define test-1-9
  (lambda ()
-  (assert (interpret-raise "int2-files/9") -1)))
+  (assert (test-interpret "int2-files/9") -1)))
 
 (define test-1-10
  (lambda ()
-  (assert (interpret-raise "int2-files/10") 789)))
+  (assert (test-interpret "int2-files/10") 789)))
 
 (define test-1-11
  (lambda ()
@@ -71,23 +71,23 @@
 
 (define test-1-14
  (lambda ()
-  (assert (interpret-raise "int2-files/14") 12)))
+  (assert (test-interpret "int2-files/14") 12)))
 
 (define test-1-15
  (lambda ()
-  (assert (interpret-raise "int2-files/15") 125)))
+  (assert (test-interpret "int2-files/15") 125)))
 
 (define test-1-16
  (lambda ()
-  (assert (interpret-raise "int2-files/16") 110)))
+  (assert (test-interpret "int2-files/16") 110)))
 
 (define test-1-17
  (lambda ()
-  (assert (interpret-raise "int2-files/17") 2000400)))
+  (assert (test-interpret "int2-files/17") 2000400)))
 
 (define test-1-18
  (lambda ()
-  (assert (interpret-raise "int2-files/18") 101)))
+  (assert (test-interpret "int2-files/18") 101)))
 
 (define test-1-19
  (lambda ()
@@ -97,4 +97,4 @@
 
 (define test-1-20
 	(lambda ()
-		(assert (interpret-raise "int2-files/20") 21)))
+		(assert (test-interpret "int2-files/20") 21)))

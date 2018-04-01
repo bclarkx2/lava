@@ -14,43 +14,43 @@
 
 (define test-1-1
  (lambda ()
-  (assert (interpret-raise "given-files/1") 150)))
+  (assert (test-interpret "given-files/1") 150)))
 
 (define test-1-2
  (lambda ()
-  (assert (interpret-raise "given-files/2") -4)))
+  (assert (test-interpret "given-files/2") -4)))
 
 (define test-1-3
  (lambda ()
-  (assert (interpret-raise "given-files/3") 10)))
+  (assert (test-interpret "given-files/3") 10)))
 
 (define test-1-4
  (lambda ()
-  (assert (interpret-raise "given-files/4") 16)))
+  (assert (test-interpret "given-files/4") 16)))
 
 (define test-1-5
  (lambda ()
-  (assert (interpret-raise "given-files/5") 220)))
+  (assert (test-interpret "given-files/5") 220)))
 
 (define test-1-6
  (lambda ()
-  (assert (interpret-raise "given-files/6") 5)))
+  (assert (test-interpret "given-files/6") 5)))
 
 (define test-1-7
  (lambda ()
-  (assert (interpret-raise "given-files/7") 6)))
+  (assert (test-interpret "given-files/7") 6)))
 
 (define test-1-8
  (lambda ()
-  (assert (interpret-raise "given-files/8") 10)))
+  (assert (test-interpret "given-files/8") 10)))
 
 (define test-1-9
  (lambda ()
-  (assert (interpret-raise "given-files/9") 5)))
+  (assert (test-interpret "given-files/9") 5)))
 
 (define test-1-10
  (lambda ()
-  (assert (interpret-raise "given-files/10") -39)))
+  (assert (test-interpret "given-files/10") -39)))
 
 (define test-1-11
  (lambda ()
@@ -78,56 +78,56 @@
 
 (define test-1-15
  (lambda ()
-  (assert (interpret-raise "given-files/15") 'true)))
+  (assert (test-interpret "given-files/15") 'true)))
 
 (define test-1-16
  (lambda ()
-  (assert (interpret-raise "given-files/16") 100)))
+  (assert (test-interpret "given-files/16") 100)))
 
 (define test-1-17
  (lambda ()
-  (assert (interpret-raise "given-files/17") 'false)))
+  (assert (test-interpret "given-files/17") 'false)))
 
 (define test-1-18
  (lambda ()
-  (assert (interpret-raise "given-files/18") 'true)))
+  (assert (test-interpret "given-files/18") 'true)))
 
 (define test-1-19
  (lambda ()
-  (assert (interpret-raise "given-files/19") 128)))
+  (assert (test-interpret "given-files/19") 128)))
 
 (define test-1-20
  (lambda ()
-  (assert (interpret-raise "given-files/20") 12)))
+  (assert (test-interpret "given-files/20") 12)))
 
 (define test-1-21
  (lambda ()
-  (assert (interpret-raise "given-files/21") 30)))
+  (assert (test-interpret "given-files/21") 30)))
 
 (define test-1-22
  (lambda ()
-  (assert (interpret-raise "given-files/22") 11)))
+  (assert (test-interpret "given-files/22") 11)))
 
 (define test-1-23
  (lambda ()
-  (assert (interpret-raise "given-files/23") 1106)))
+  (assert (test-interpret "given-files/23") 1106)))
 
 (define test-1-24
  (lambda ()
-  (assert (interpret-raise "given-files/24") 12)))
+  (assert (test-interpret "given-files/24") 12)))
 
 (define test-1-25
  (lambda ()
-  (assert (interpret-raise "given-files/25") 16)))
+  (assert (test-interpret "given-files/25") 16)))
 
 (define test-1-26
  (lambda ()
-  (assert (interpret-raise "given-files/26") 72)))
+  (assert (test-interpret "given-files/26") 72)))
 
 (define test-1-27
  (lambda ()
-  (assert (interpret-raise "given-files/27") 21)))
+  (assert (test-interpret "given-files/27") 21)))
 
 (define test-1-28
  (lambda ()
-  (assert (interpret-raise "given-files/28") 164)))
+  (assert (test-interpret "given-files/28") 164)))
