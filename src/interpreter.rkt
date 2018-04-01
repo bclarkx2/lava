@@ -74,8 +74,8 @@
  (lambda (e s)
   (call/cc (lambda (return)
    (state-remove-layer
-    (state (func-def e)
-           (function-first-pass (func-def e) (new-func-env e s))
+    (state (call-func-def e s)
+           (function-first-pass (call-func-def e s) (new-func-env e s))
            default-brk
            default-cont
            return
