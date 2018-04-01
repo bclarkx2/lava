@@ -18,13 +18,13 @@
 (define interpret-raise
   (lambda (filename)
      (value (list 'funcall 'main)
-            (global-first-pass (parser filename) (state-empty))
+            (state-global-first-pass (parser filename) (state-empty))
             default-throw)))
 
 
 ;;; Value
  
-;Mathematical Operators
+; Mathematical Operators
 (define value-int
   (lambda (e s throw)
     (cond
@@ -39,7 +39,7 @@
       ((eq? '% (operator e)) (compute remainder e s throw))
       (else (error 'badop "Undefined int operator")))))
 
-;Comparison and Boolean Operations
+; Comparison and Boolean Operations
 (define value-bool
   (lambda (e s throw)
     (cond
@@ -54,6 +54,18 @@
       ((eq? '! (operator e)) (not (value (operand1 e s throw) s throw)))
       (else (error 'badop "Undefined bool operator")))))
 
+; Function calls
+(define value-func
+ (lambda (e s throw)
+  (call/cc (lambda (return)
+   (state-remove-layer
+    (state (call-func-def e s)
+           (state-function-first-pass (call-func-def e s)
+                                      (new-func-env e s throw))
+           default-brk
+           default-cont
+           return
+           (mk-safe-throw throw s)))))))
 
 (define value
   (lambda (e s throw)
@@ -72,96 +84,21 @@
           ((eq? 'false e) #f)
           (else (state-lookup e s))))))
 
-(define value-func
- (lambda (e s throw)
-  (call/cc (lambda (return)
-   (state-remove-layer
-    (state (call-func-def e s)
-           (function-first-pass (call-func-def e s) (new-func-env e s throw))
-           default-brk
-           default-cont
-           return
-           (mk-safe-throw throw s)))))))
+
+;; Value helpers
 
 (define mk-safe-throw
  (lambda (throw call-state)
   (lambda (throw-state val)
    (throw call-state val))))
-  
 
-; abstractions for value
+(define call-func-params (lambda (e s) (car (closure e s))))
+(define call-func-def (lambda (e s) (cadr (closure e s))))
+(define call-func-env-procedure (lambda (e s) (caddr (closure e s))))
 
-(define call-func-params
-  (lambda (e s)
-    (car (closure e s))))
-(define call-func-def
-  (lambda (e s)
-    (cadr (closure e s))))
-(define call-func-env-procedure
-  (lambda (e s)
-    (caddr (closure e s))))
 (define call-func-env
   (lambda (e s)
     ((call-func-env-procedure e s) s)))
-
-;; Function
-(define state-function-declaration
-  (lambda (exp s)
-    (state-add-binding (func-name exp) (list
-                                        (func-params exp)
-                                        (func-def exp)
-                                        (environment s))
-                                        s)))
-
-(define layer-count
-  (lambda (s)
-    (if (null? (state-remaining s))
-        1
-        (+ 1 (layer-count (state-remaining s))))))
-
-
-(define global-first-pass
-  (lambda (stmt-list s)
-    (cond
-      ((null? stmt-list) s)
-      ((not (list? stmt-list)) s)
-  
-      ; may be a list of statements
-      ((list? (keyword stmt-list)) (global-first-pass (cdr stmt-list) (global-first-pass (car stmt-list) s)))
-
-      ; remaining operations delegated to helpers
-      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s)) 
-      ((eq? (keyword stmt-list) 'var) (state-var stmt-list s default-brk default-cont default-return default-throw))
-      
-      (else s))))
-
-(define function-first-pass
-  (lambda (stmt-list s)
-    (cond
-      ((null? stmt-list) s)
-      ((not (list? stmt-list)) s)
-
-      ((list? (keyword stmt-list)) (function-first-pass (cdr stmt-list) (function-first-pass (car stmt-list) s)))
-
-      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
-      (else s))))
-
-(define environment
-  (lambda (s)
-    (lambda (call-state)
-      (subenvironment (layer-count s) (reverse call-state)))))
-
-(define subenvironment
-  (lambda (numLayers s)
-    (cond
-      ((eq? 1 numLayers) (cons (top-layer s) '()))
-      ((equal? (state-empty) s) (raise 'Illegal-call))
-      (else (cons (top-layer s) (subenvironment (- numLayers 1) (cdr s)))))))
-
-(define func-name (lambda (exp) (cadr exp)))
-(define func-params (lambda (exp) (caddr exp)))
-(define func-def (lambda (exp) (cadddr exp)))
-
 
 (define closure
  (lambda (e s)
@@ -360,20 +297,39 @@
 
 ;;; State Mappings
 
-(define top-level-state
- (lambda (stmt-lst)
-  (state-no-continuations stmt-lst (state-empty))))
+(define state-global-first-pass
+  (lambda (stmt-list s)
+    (cond
+      ((null? stmt-list) s)
+      ((not (list? stmt-list)) s)
   
-(define state-no-continuations
-  (lambda (stmt-lst s)
-  (call/cc
-   (lambda (return)
-    (state stmt-lst
-           s
-           default-brk
-           default-cont
-           return
-           default-throw)))))
+      ; may be a list of statements
+      ((list? (keyword stmt-list))
+        (state-global-first-pass (cdr stmt-list)
+                                 (state-global-first-pass (car stmt-list)
+                                                          s)))
+
+      ; remaining operations delegated to helpers
+      ((eq? (keyword stmt-list) 'function)
+       (state-function-declaration stmt-list s)) 
+      ((eq? (keyword stmt-list) 'var)
+       (state-var stmt-list s default-brk default-cont default-return default-throw))
+      
+      (else s))))
+
+(define state-function-first-pass
+  (lambda (stmt-list s)
+    (cond
+      ((null? stmt-list) s)
+      ((not (list? stmt-list)) s)
+
+      ((list? (keyword stmt-list))
+       (state-function-first-pass (cdr stmt-list)
+                                  (state-function-first-pass (car stmt-list)
+                                                              s)))
+
+      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
+      (else s))))
 
 (define state
   (lambda (stmt s brk cont return throw)
@@ -496,6 +452,7 @@
   (define initialization
     (lambda (stmt) (caddr stmt)))
 
+
 ;; While
 
 (define state-while
@@ -574,3 +531,39 @@
   (if (null? (finally-block stmt))
    '()
    (cadr (finally-block stmt)))))
+
+
+;; Function
+
+(define state-function-declaration
+  (lambda (exp s)
+    (state-add-binding (func-name exp) (list
+                                        (func-params exp)
+                                        (func-def exp)
+                                        (environment s))
+                                        s)))
+
+(define layer-count
+  (lambda (s)
+    (if (null? (state-remaining s))
+        1
+        (+ 1 (layer-count (state-remaining s))))))
+
+(define environment
+  (lambda (s)
+    (lambda (call-state)
+      (subenvironment (layer-count s) (reverse call-state)))))
+
+(define subenvironment
+  (lambda (num-layers s)
+    (cond
+      ((eq? 1 num-layers) (cons (top-layer s) '()))
+      ((equal? (state-empty) s) (raise 'Illegal-call))
+      (else 
+       (cons (top-layer s)
+             (subenvironment (- num-layers 1)
+                             (cdr s)))))))
+
+(define func-name (lambda (exp) (cadr exp)))
+(define func-params (lambda (exp) (caddr exp)))
+(define func-def (lambda (exp) (cadddr exp)))
