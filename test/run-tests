@@ -13,10 +13,16 @@ elif [[ -z $1 ]] ; then
 elif [[ $2 == "-q" ]] ; then
     test_file=$1
     question_num=$3
+    if [[ -z $4 ]] ; then
+        starting_test=1
+    else
+        starting_test=$4
+    fi
     stopping_num=$(($question_num + 1))
 else
     test_file=$1
     question_num=1
+    starting_test=1
     stopping_num=-1
 fi
 
@@ -43,7 +49,7 @@ do
 
     printf "\n=============\n"
 
-    test_num=1
+    ((test_num = 1 + ($starting_test - 1) ))
     while [[ $test_exists -eq 0 ]] ;
     do
         result=$(racket -e "(require \"$test_file\")

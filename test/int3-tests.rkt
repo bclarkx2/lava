@@ -13,84 +13,84 @@
  (lambda ()
   (assert (test-interpret "int3-files/1") 10)))
 
-(define test-2-1
+(define test-1-2
  (lambda ()
   (assert (test-interpret "int3-files/2") 14)))
 
-(define test-3-1
+(define test-1-3
  (lambda ()
   (assert (test-interpret "int3-files/3") 45)))
 
-(define test-4-1
+(define test-1-4
  (lambda ()
   (assert (test-interpret "int3-files/4") 55)))
 
-(define test-5-1
+(define test-1-5
  (lambda ()
   (assert (test-interpret "int3-files/5") 1)))
 
-(define test-6-1
+(define test-1-6
  (lambda ()
   (assert (test-interpret "int3-files/6") 115)))
 
-(define test-7-1
+(define test-1-7
  (lambda ()
   (assert (test-interpret "int3-files/7") 'true)))
 
-(define test-8-1
+(define test-1-8
  (lambda ()
   (assert (test-interpret "int3-files/8") 20)))
 
-(define test-9-1
+(define test-1-9
  (lambda ()
   (assert (test-interpret "int3-files/9") 24)))
 
-(define test-10-1
+(define test-1-10
  (lambda ()
   (assert (test-interpret "int3-files/10") 2)))
 
-(define test-11-1
+(define test-1-11
  (lambda ()
   (assert (test-interpret "int3-files/11") 35)))
 
-(define test-12-1
+(define test-1-12
  (lambda ()
   (assert-interpret-err
   "int3-files/12"
   'parameter-mismatch)))
 
-(define test-13-1
+(define test-1-13
  (lambda ()
   (assert (test-interpret "int3-files/13") 90)))
 
 
-(define test-14-1
+(define test-1-14
  (lambda ()
   (assert (test-interpret "int3-files/14") 69)))
 
-(define test-15-1
+(define test-1-15
  (lambda ()
   (assert (test-interpret "int3-files/15") 87)))
 
-(define test-16-1
+(define test-1-16
  (lambda ()
   (assert (test-interpret "int3-files/16") 64)))
 
-(define test-17-1
+(define test-1-17
  (lambda ()
   (assert-interpret-err
   "int3-files/17"
   'assign-before-declare)))
 
-(define test-18-1
+(define test-1-18
  (lambda ()
   (assert (test-interpret "int3-files/18") 125)))
 
-(define test-19-1
+(define test-1-19
  (lambda ()
   (assert (test-interpret "int3-files/19") 100)))
 
 
-(define test-20-1
+(define test-1-20
  (lambda ()
   (assert (test-interpret "int3-files/20") 2000400)))
