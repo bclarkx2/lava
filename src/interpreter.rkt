@@ -411,7 +411,8 @@
         (state-set-binding
          (varname stmt)
          (value (varexpr stmt) s throw)
-         (state (varexpr stmt) s brk cont return throw))
+         s)
+         ;(state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
 
 (define varname
@@ -521,19 +522,28 @@
  (lambda (stmt result-state brk cont return throw)
   (lambda (aborted-throw-state throw-val)
    (result-state
-      (state (list 'begin (list 'var (catch-var stmt) throw-val) (catch stmt))
+      (state (block-form-of-catch stmt throw-val)
              aborted-throw-state
              brk cont return throw)))))
+
+(define block-form-of-catch
+  (lambda (stmt throw-val)
+    (if (is-catch? stmt)
+      (list 'begin (list 'var (catch-var stmt) throw-val) (catch stmt))
+      '())))
 
 (define try (lambda (stmt) (cadr stmt)))
 (define catch-var
  (lambda (stmt)
   (caadr (caddr stmt))))
+(define is-catch?
+  (lambda (stmt)
+     (not (null? (caddr stmt)))))
 (define catch
  (lambda (stmt)
-  (if (null? (caddr stmt))
-   '()
-   (caddr (caddr stmt)))))
+  (if (is-catch? stmt)
+   (caddr (caddr stmt))
+   '())))
 
 (define finally-block (lambda (stmt) (cadddr stmt)))
 (define finally

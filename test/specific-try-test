@@ -1,0 +1,28 @@
+function foo () 
+{
+  try 
+  {
+    throw 6;
+  }
+  finally 
+  {
+    throw 10;
+  }
+}
+
+function bar () 
+{
+  try
+  {
+    foo();
+  }
+  catch (e)
+  {
+    return e;
+  }
+}
+
+function main () 
+{
+  return bar();
+}

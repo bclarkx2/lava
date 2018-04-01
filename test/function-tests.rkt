@@ -75,6 +75,6 @@ function bar () {
   }
 }
 function main () {
-  return foo();
+  return bar();
 }")
  10)
