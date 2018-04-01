@@ -131,7 +131,7 @@
   (lambda (stmt-list s)
     (cond
       ((null? stmt-list) s)
-      ((not (list? stmt-list) s))
+      ((not (list? stmt-list)) s)
 
       ((list? (keyword stmt-list)) (function-first-pass (keyword stmt-list) s))
 
