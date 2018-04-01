@@ -73,8 +73,8 @@
 ;;; Asserts
 
 (define assert-interpret-err
-  (lambda (file err)
-    (assert err (test-interpret file))))
+  (lambda (file err [msg ""])
+    (assert err (test-interpret file) msg)))
 
 (define assert-state-err
  (lambda (stmt-tree err)
