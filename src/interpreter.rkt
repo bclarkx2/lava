@@ -470,14 +470,14 @@
   (lambda (stmt s brk cont return throw)
    (call/cc (lambda (while-brk)
      (if (value (condition stmt) s throw)
-           (state stmt
-                   (call/cc (lambda (while-cont) 
-                    (state (loopbody stmt)
-                           (state (condition stmt)
-                                  s
-                                  brk cont return throw)
-                           while-brk while-cont return throw)))
-                    while-brk cont return throw)
+         (state stmt
+                (call/cc (lambda (while-cont) 
+                 (state (loopbody stmt)
+                        (state (condition stmt)
+                               s
+                               brk cont return throw)
+                        while-brk while-cont return throw)))
+                 while-brk cont return throw)
           (state (condition stmt) s brk cont return throw))))))
 
 (define loopbody
