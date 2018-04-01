@@ -17,51 +17,53 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename)
-     (value (list 'funcall 'main) (global-first-pass (parser filename) (state-empty)))))
+     (value (list 'funcall 'main)
+            (global-first-pass (parser filename) (state-empty))
+            default-throw)))
 
 
 ;;; Value
  
 ;Mathematical Operators
 (define value-int
-  (lambda (e s)
+  (lambda (e s throw)
     (cond
       ((number? e) e)
       ((number? (car e)) (car e))
       ((and (eq? '- (operator e)) (unary? e))
-       (- 0 (value (operand1 e s) s)))
-      ((eq? '+ (operator e)) (compute + e s))
-      ((eq? '- (operator e)) (compute - e s))
-      ((eq? '* (operator e)) (compute * e s))
-      ((eq? '/ (operator e)) (compute quotient e s))
-      ((eq? '% (operator e)) (compute remainder e s))
+       (- 0 (value (operand1 e s throw) s throw)))
+      ((eq? '+ (operator e)) (compute + e s throw))
+      ((eq? '- (operator e)) (compute - e s throw))
+      ((eq? '* (operator e)) (compute * e s throw))
+      ((eq? '/ (operator e)) (compute quotient e s throw))
+      ((eq? '% (operator e)) (compute remainder e s throw))
       (else (error 'badop "Undefined int operator")))))
 
 ;Comparison and Boolean Operations
 (define value-bool
-  (lambda (e s)
+  (lambda (e s throw)
     (cond
-      ((eq? '== (operator e)) (compute eq? e s))
-      ((eq? '!= (operator e)) (compute (lambda (a b) (not (eq? a b))) e s))
-      ((eq? '> (operator e)) (compute > e s))
-      ((eq? '< (operator e)) (compute < e s))
-      ((eq? '>= (operator e)) (compute >= e s))
-      ((eq? '<= (operator e)) (compute <= e s))
-      ((eq? '&& (operator e)) (compute (lambda (a b) (and a b)) e s))
-      ((eq? '|| (operator e)) (compute (lambda (a b) (or a b)) e s))
-      ((eq? '! (operator e)) (not (value (operand1 e s) s)))
+      ((eq? '== (operator e)) (compute eq? e s throw))
+      ((eq? '!= (operator e)) (compute (lambda (a b) (not (eq? a b))) e s throw))
+      ((eq? '> (operator e)) (compute > e s throw))
+      ((eq? '< (operator e)) (compute < e s throw))
+      ((eq? '>= (operator e)) (compute >= e s throw))
+      ((eq? '<= (operator e)) (compute <= e s throw))
+      ((eq? '&& (operator e)) (compute (lambda (a b) (and a b)) e s throw))
+      ((eq? '|| (operator e)) (compute (lambda (a b) (or a b)) e s throw))
+      ((eq? '! (operator e)) (not (value (operand1 e s throw) s throw)))
       (else (error 'badop "Undefined bool operator")))))
 
 
 (define value
-  (lambda (e s)
+  (lambda (e s throw)
     (if (list? e)
         (cond
-          ((null? (cdr e)) (value (car e) s))
-          ((int-operator? (operator e)) (value-int e s))
-          ((bool-operator? (operator e)) (value-bool e s))
-          ((eq? 'funcall (operator e)) (value-func e s))
-          ((eq? '= (operator e)) (operand2 e s))
+          ((null? (cdr e)) (value (car e) s throw))
+          ((int-operator? (operator e)) (value-int e s throw))
+          ((bool-operator? (operator e)) (value-bool e s throw))
+          ((eq? 'funcall (operator e)) (value-func e s throw))
+          ((eq? '= (operator e)) (operand2 e s throw))
           (else (error 'badop "Undefined operator")))
         (cond
           ((number? e) e)
@@ -71,15 +73,21 @@
           (else (state-lookup e s))))))
 
 (define value-func
- (lambda (e s)
+ (lambda (e s throw)
   (call/cc (lambda (return)
    (state-remove-layer
     (state (call-func-def e s)
-           (function-first-pass (call-func-def e s) (new-func-env e s))
+           (function-first-pass (call-func-def e s) (new-func-env e s throw))
            default-brk
            default-cont
            return
-           default-throw))))))
+           (mk-safe-throw throw s)))))))
+
+(define mk-safe-throw
+ (lambda (throw call-state)
+  (lambda (throw-state val)
+   (throw call-state val))))
+  
 
 ; abstractions for value
 
@@ -160,29 +168,31 @@
   (state-lookup (func-name e) s)))
 
 (define new-func-env
- (lambda (e s)
+ (lambda (e s throw)
   (resolve-params (state-add-layer (call-func-env e s))
                   s
                   (call-func-params e s)
-                  (actual-params e))))
+                  (actual-params e)
+                  throw)))
 
 (define resolve-params
- (lambda (func-env cur-state formal actual)
+ (lambda (func-env cur-state formal actual throw)
   (cond
    ((and (null? formal) (null? actual))
     func-env)
    ((xor (null? formal) (null? actual))
     (raise 'parameter-mismatch))
    (else
-    (resolve-params (resolve-param func-env cur-state formal actual)
+    (resolve-params (resolve-param func-env cur-state formal actual throw)
                     cur-state
                     (cdr formal)
-                    (cdr actual))))))
+                    (cdr actual)
+                    throw)))))
 
 (define resolve-param
- (lambda (func-env cur-state formal actual)
+ (lambda (func-env cur-state formal actual throw)
   (state-add-binding (car formal)
-                     (value (car actual) cur-state)
+                     (value (car actual) cur-state throw)
                      func-env)))
 
 (define actual-params
@@ -212,15 +222,15 @@
         #t)))
 
 (define operand1
-  (lambda (lis s) (operand (cadr lis) s)))
+  (lambda (lis s throw) (operand (cadr lis) s throw)))
 
 (define operand2
-  (lambda (lis s) (operand (caddr lis) s)))
+  (lambda (lis s throw) (operand (caddr lis) s throw)))
 
 (define operand
-  (lambda (expr s)
+  (lambda (expr s throw)
     (cond
-      ((list? expr) (value expr s))
+      ((list? expr) (value expr s throw))
       ((or (number? expr)
            (eq? 'true expr)
            (eq? 'false expr))
@@ -228,9 +238,9 @@
       (else (state-lookup expr s)))))
 
 (define compute
-  (lambda (op e s)
-    (op (value (operand1 e s) s)
-        (value (operand2 e s) s))))
+  (lambda (op e s throw)
+    (op (value (operand1 e s throw) s throw)
+        (value (operand2 e s throw) s throw))))
 
 
 ;;; Bindings
@@ -372,7 +382,7 @@
       ; null and return statements do not alter state
       ((null? stmt) s)
       ((not (list? stmt)) s)
-      ((eq? (keyword stmt) 'return) (handle-return stmt s return))
+      ((eq? (keyword stmt) 'return) (handle-return stmt s return throw))
 
       ; may be a list of statements
       ((list? (keyword stmt)) (state-list stmt s brk cont return throw))
@@ -385,7 +395,7 @@
       ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw))
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
       ((eq? (keyword stmt) 'function) s)
-      ((eq? (keyword stmt) 'funcall) (begin (value stmt s) s))
+      ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw) s))
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
@@ -408,14 +418,14 @@
 
 (define handle-throw
  (lambda (stmt s throw)
-  (throw s (value (cdr stmt) s))))
+  (throw s (value (cdr stmt) s throw))))
 
 (define handle-return
-  (lambda (stmt s return)
+  (lambda (stmt s return throw)
     (cond 
-      ((eq? (value (cdr stmt) s) #t) (return 'true))
-      ((eq? (value (cdr stmt) s) #f) (return 'false))
-      (else (return (value (cdr stmt) s))))))
+      ((eq? (value (cdr stmt) s throw) #t) (return 'true))
+      ((eq? (value (cdr stmt) s throw) #f) (return 'false))
+      (else (return (value (cdr stmt) s throw))))))
 
 
 ;; Statement list
@@ -434,7 +444,7 @@
     (if (is-declared (varname stmt) s)
         (state-set-binding
          (varname stmt)
-         (value (varexpr stmt) s)
+         (value (varexpr stmt) s throw)
          (state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
 
@@ -449,7 +459,7 @@
 
 (define state-if
   (lambda (stmt s brk cont return throw)
-    (if (value (condition stmt) s)
+    (if (value (condition stmt) s throw)
         (state (stmt1 stmt)
                (state (condition stmt) s brk cont return throw)
                brk cont return throw)
@@ -475,7 +485,7 @@
         (if (has-initialization stmt)
             (state-add-binding
              (varname stmt)
-             (value (initialization stmt) s)
+             (value (initialization stmt) s throw)
              (state (initialization stmt) s brk cont return throw))
             (state-add-binding
              (varname stmt) '() s)))))
@@ -491,7 +501,7 @@
 (define state-while
   (lambda (stmt s brk cont return throw)
    (call/cc (lambda (while-brk)
-     (if (value (condition stmt) s)
+     (if (value (condition stmt) s throw)
            (state stmt
                    (call/cc (lambda (while-cont) 
                     (state (loopbody stmt)
