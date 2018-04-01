@@ -74,13 +74,8 @@
  (lambda (e s)
   (call/cc (lambda (return)
    (state-remove-layer
-<<<<<<< HEAD
-    (state (func-body e)
-           (function-first-pass (func-body e) (new-func-env e s))
-=======
-    (state (call-func-def e s)
-           (new-func-env e s)
->>>>>>> bd49d4fbbb035689822bc7429c06cf96a6041f7f
+    (state (func-def e)
+           (function-first-pass (func-def e) (new-func-env e s))
            default-brk
            default-cont
            return
@@ -116,7 +111,7 @@
         1
         (+ 1 (layer-count (state-remaining s))))))
 
-<<<<<<< HEAD
+
 (define global-first-pass
   (lambda (stmt-list s)
     (cond
@@ -142,11 +137,7 @@
 
       ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
       (else s))))
-    
-(define func-name
- (lambda (e)
-  (cadr e)))
-=======
+
 (define environment
   (lambda (s)
     (lambda (call-state)
@@ -162,7 +153,7 @@
 (define func-name (lambda (exp) (cadr exp)))
 (define func-params (lambda (exp) (caddr exp)))
 (define func-def (lambda (exp) (cadddr exp)))
->>>>>>> bd49d4fbbb035689822bc7429c06cf96a6041f7f
+
 
 (define closure
  (lambda (e s)
@@ -354,6 +345,7 @@
 (define default-brk (lambda (x) (raise 'illegal-break)))
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
+(define default-return (lambda (x) (raise 'illegal-return)))
 
 
 ;;; State Mappings
