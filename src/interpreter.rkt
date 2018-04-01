@@ -107,7 +107,7 @@
 
 (define layer-count
   (lambda (s)
-    (if (equal? (state-empty) s)
+    (if (null? (state-remaining s))
         1
         (+ 1 (layer-count (state-remaining s))))))
 
@@ -119,11 +119,11 @@
       ((not (list? stmt-list)) s)
   
       ; may be a list of statements
-      ((list? (keyword stmt-list)) (global-first-pass (keyword stmt-list) s))
+      ((list? (keyword stmt-list)) (global-first-pass (cdr stmt-list) (global-first-pass (car stmt-list) s)))
 
       ; remaining operations delegated to helpers
       ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s)) 
-      ((eq? (keyword stmt-list) 'var) (state-var stmt-list default-brk default-cont default-return default-throw))
+      ((eq? (keyword stmt-list) 'var) (state-var stmt-list s default-brk default-cont default-return default-throw))
       
       (else s))))
 
@@ -133,7 +133,7 @@
       ((null? stmt-list) s)
       ((not (list? stmt-list)) s)
 
-      ((list? (keyword stmt-list)) (function-first-pass (keyword stmt-list) s))
+      ((list? (keyword stmt-list)) (function-first-pass (cdr stmt-list) (function-first-pass (car stmt-list) s)))
 
       ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
       (else s))))
