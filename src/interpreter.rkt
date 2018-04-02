@@ -413,7 +413,7 @@
          (varname stmt)
          (value (varexpr stmt) s throw)
          s)
-         ;(state (varexpr stmt) s brk cont return throw))
+         ;;; (state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
 
 (define varname
@@ -454,7 +454,8 @@
             (state-add-binding
              (varname stmt)
              (value (initialization stmt) s throw)
-             (state (initialization stmt) s brk cont return throw))
+             s)
+             ;;; (state (initialization stmt) s brk cont return throw))
             (state-add-binding
              (varname stmt) '() s)))))
 
