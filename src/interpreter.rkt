@@ -36,32 +36,32 @@
  
 ; Mathematical Operators
 (define value-int
-  (lambda (e s throw)
+  (lambda (e s symbol? throw)
     (cond
       ((number? e) e)
       ((number? (car e)) (car e))
-      ((and (eq? '- (operator e)) (unary? e))
+      ((and (symbol? '-) (unary? e))
        (- 0 (value (operand1 e s throw) s throw)))
-      ((eq? '+ (operator e)) (compute + e s throw))
-      ((eq? '- (operator e)) (compute - e s throw))
-      ((eq? '* (operator e)) (compute * e s throw))
-      ((eq? '/ (operator e)) (compute quotient e s throw))
-      ((eq? '% (operator e)) (compute remainder e s throw))
+      ((symbol? '+) (compute + e s throw))
+      ((symbol? '-) (compute - e s throw))
+      ((symbol? '*) (compute * e s throw))
+      ((symbol? '/) (compute quotient e s throw))
+      ((symbol? '%) (compute remainder e s throw))
       (else (error 'badop "Undefined int operator")))))
 
 ; Comparison and Boolean Operations
 (define value-bool
-  (lambda (e s throw)
+  (lambda (e s symbol? throw)
     (cond
-      ((eq? '== (operator e)) (compute eq? e s throw))
-      ((eq? '!= (operator e)) (compute (lambda (a b) (not (eq? a b))) e s throw))
-      ((eq? '> (operator e)) (compute > e s throw))
-      ((eq? '< (operator e)) (compute < e s throw))
-      ((eq? '>= (operator e)) (compute >= e s throw))
-      ((eq? '<= (operator e)) (compute <= e s throw))
-      ((eq? '&& (operator e)) (compute (lambda (a b) (and a b)) e s throw))
-      ((eq? '|| (operator e)) (compute (lambda (a b) (or a b)) e s throw))
-      ((eq? '! (operator e)) (not (value (operand1 e s throw) s throw)))
+      ((symbol? '==) (compute eq? e s throw))
+      ((symbol? '!=) (compute (lambda (a b) (not (eq? a b))) e s throw))
+      ((symbol? '>) (compute > e s throw))
+      ((symbol? '<) (compute < e s throw))
+      ((symbol? '>=) (compute >= e s throw))
+      ((symbol? '<=) (compute <= e s throw))
+      ((symbol? '&&) (compute (lambda (a b) (and a b)) e s throw))
+      ((symbol? '||) (compute (lambda (a b) (or a b)) e s throw))
+      ((symbol? '!) (not (value (operand1 e s throw) s throw)))
       (else (error 'badop "Undefined bool operator")))))
 
 ; Function calls
@@ -79,20 +79,21 @@
 
 (define value
   (lambda (e s throw)
-    (if (list? e)
-      (cond
-        ((null? (cdr e)) (value (car e) s throw))
-        ((int-operator? (operator e)) (value-int e s throw))
-        ((bool-operator? (operator e)) (value-bool e s throw))
-        ((eq? 'funcall (operator e)) (value-func e s throw))
-        ((eq? '= (operator e)) (operand2 e s throw))
-        (else (error 'badop "Undefined operator")))
-      (cond
-        ((number? e) e)
-        ((boolean? e) e)
-        ((eq? 'true e) #t)
-        ((eq? 'false e) #f)
-        (else (state-lookup e s))))))
+    (let ([symbol? (lambda (sym) (eq? sym (operator e)))])
+      (if (list? e)
+        (cond
+          ((null? (cdr e)) (value (car e) s throw))
+          ((int-operator? (operator e)) (value-int e s symbol? throw))
+          ((bool-operator? (operator e)) (value-bool e s symbol? throw))
+          ((symbol? 'funcall) (value-func e s throw))
+          ((symbol? '=) (operand2 e s throw))
+          (else (error 'badop "Undefined operator")))
+        (cond
+          ((number? e) e)
+          ((boolean? e) e)
+          ((eq? 'true e) #t)
+          ((eq? 'false e) #f)
+          (else (state-lookup e s)))))))
 
 
 ;; Value helpers
