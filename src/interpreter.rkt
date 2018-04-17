@@ -5,6 +5,7 @@
 
 #lang racket
 (provide (all-defined-out))
+(require "classParser.rkt")
 (require "functionParser.rkt")
 (require "simpleParser.rkt")
 
@@ -23,13 +24,29 @@
                                      (state-empty))
             default-throw)))
 
-; fallback that tries to parse with v3 parser,
-; and falls back to v2 parser in case of failure
+
+; all accepted parsers, in order of usage
+(define parsers
+ (lambda ()
+  (list parser function-parser simple-parser)))
+  
+
+; fallback parser that tries to parse with v4 parser,
+; and falls back to v3/v2 parser in case of failure
 (define fallback-parser
-  (lambda (filename)
-    (with-handlers ([(lambda (msg) 'fine)
-                     (lambda (msg) (simple-parser filename))])
-      (parser filename))))
+ (lambda (filename)
+  (try-parsers filename (parsers))))
+
+
+; attempts to parse filename with all in parsers
+(define try-parsers
+  (lambda (filename parsers)
+    (if (null? parsers)
+      (raise 'no-valid-parser)
+      (with-handlers ([(lambda (msg) 'fine)
+                       (lambda (msg) (try-parsers filename
+                                                      (cdr parsers)))])
+        ((car parsers) filename)))))
 
 
 ;;; Value
