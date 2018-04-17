@@ -36,6 +36,12 @@
       (else
         (list (cons (car (layer-variables s)) (car (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s))))))
               (cons (unbox (car (layer-values s))) (cadr (unbox-all (list (cdr (layer-variables s)) (cdr (layer-values s)))))))))))
+
+(define test-interpret-class
+ (lambda (filename classname)
+  (with-handlers ([(lambda (msg) 'no-problem)
+                    (lambda (msg) msg)])
+    (interpret-raise filename classname))))
                        
 (define test-interpret
  (lambda (filename)
