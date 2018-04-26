@@ -120,6 +120,54 @@
    (lambda (throw-state val)
     (throw call-state val))))
 
+(define operator
+  (lambda (e)
+    (car e)))
+
+(define int-operator?
+  (lambda (op)
+    (member op '(+ - * / %))))
+
+(define bool-operator?
+  (lambda (op)
+    (member op '(== != > < >= <= && || !))))
+
+(define operator?
+  (lambda (word)
+    (or (int-operator? word)
+        (bool-operator? word))))
+
+(define unary?
+  (lambda (lis)
+    (if (pair? (cddr lis))#f
+        #t)))
+
+(define operand1
+  (lambda (lis s throw) (operand (cadr lis) s throw)))
+
+(define operand2
+  (lambda (lis s throw) (operand (caddr lis) s throw)))
+
+(define operand
+  (lambda (expr s throw)
+    (cond
+      ((list? expr) (value expr s throw))
+      ((or (number? expr)
+           (eq? 'true expr)
+           (eq? 'false expr))
+           expr)
+      (else (state-lookup expr s)))))
+
+(define compute
+  (lambda (op e s throw)
+    (op (value (operand1 e s throw) s throw)
+        (value (operand2 e s throw) s throw))))
+
+
+;;; Closures
+
+;; Function closures
+
 (define call-func-params (lambda (e s) (car (closure e s))))
 (define call-func-def (lambda (e s) (cadr (closure e s))))
 (define call-func-env-procedure (lambda (e s) (caddr (closure e s))))
@@ -164,48 +212,12 @@
   (lambda (e)
     (cddr e)))
 
-(define operator
-  (lambda (e)
-    (car e)))
 
-(define int-operator?
-  (lambda (op)
-    (member op '(+ - * / %))))
+;; Class closures
 
-(define bool-operator?
-  (lambda (op)
-    (member op '(== != > < >= <= && || !))))
 
-(define operator?
-  (lambda (word)
-    (or (int-operator? word)
-        (bool-operator? word))))
+;; Instance closures
 
-(define unary?
-  (lambda (lis)
-    (if (pair? (cddr lis))#f
-        #t)))
-
-(define operand1
-  (lambda (lis s throw) (operand (cadr lis) s throw)))
-
-(define operand2
-  (lambda (lis s throw) (operand (caddr lis) s throw)))
-
-(define operand
-  (lambda (expr s throw)
-    (cond
-      ((list? expr) (value expr s throw))
-      ((or (number? expr)
-           (eq? 'true expr)
-           (eq? 'false expr))
-           expr)
-      (else (state-lookup expr s)))))
-
-(define compute
-  (lambda (op e s throw)
-    (op (value (operand1 e s throw) s throw)
-        (value (operand2 e s throw) s throw))))
 
 
 ;;; Bindings
