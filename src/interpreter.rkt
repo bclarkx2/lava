@@ -215,10 +215,56 @@
 
 ;; Class closures
 
+(define class-closure
+ (lambda (parent
+          instance-field-names
+          static-functions
+          class-instance-functions)
+  (list parent
+        instance-field-names
+        static-functions
+        class-instance-functions)))
+  
+
+(define class-parent-name (lambda (closure) (car closure)))
+
+(define class-parent
+ (lambda (closure state)
+  (state-lookup (class-parent-name)
+                state)))
+
+(define class-instance-field-names
+ (lambda (closure)
+  (cadr closure)))
+
+(define class-static-functions
+ (lambda (closure)
+  (caddr closure)))
+
+(define class-instance-functions
+ (lambda (closure)
+  (cadddr closure)))
+
 
 ;; Instance closures
 
+(define instance-closure
+ (lambda (true-type instance-field-values)
+  (list true-type instance-field-values)))
 
+(define instance-true-type-name
+ (lambda (closure)
+  (car closure)))
+
+(define instance-true-type
+ (lambda (closure state)
+  (state-lookup (instance-true-type-name closure)
+                state)))
+
+(define instance-field-values
+ (lambda (closure state)
+  (cadr closure)
+  
 
 ;;; Bindings
 
