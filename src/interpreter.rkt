@@ -451,6 +451,7 @@
       ((eq? (keyword stmt) 'function) s)
       ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw) s))
       ((eq? (keyword stmt) 'new) s)
+      ((eq? (keyword stmt) 'class) s)
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
