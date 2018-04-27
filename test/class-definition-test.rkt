@@ -63,14 +63,25 @@
                                     (var x))))
         '(f g))
 
-(assert (state-class '(class A () ((var x)
-                                    (static-function main ()
-                                       ((return 2)))
-                                    (function f ()
-                                       ((return 2)))))
-                     (state-empty)
-                     default-brk
-                     default-cont
-                     default-return
-                     default-throw)
-        '())
+;;; (assert (state-class '(class A () ((var x)
+;;;                                     (static-function main ()
+;;;                                        ((return 2)))
+;;;                                     (function f ()
+;;;                                        ((return 2)))))
+;;;                      (state-empty)
+;;;                      default-brk
+;;;                      default-cont
+;;;                      default-return
+;;;                      default-throw)
+;;;         '())
+
+(assert (instance-field-values (value-new '(new A)
+                                          (state-class '(class A () ((var x 1)
+                                                                     (var y 2)))
+                                                       (state-empty)
+                                                       default-brk
+                                                       default-cont
+                                                       default-return
+                                                       default-throw)))
+        '(() ())
+        "size of ifv")
