@@ -438,6 +438,8 @@
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
       ((eq? (keyword stmt) 'function) s)
       ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw) s))
+      ((eq? (keyword stmt) 'class) (state-class stmt s brk cont return throw))
+      ((eq? (keyword stmt) 'new) s)
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
