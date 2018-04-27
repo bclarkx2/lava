@@ -270,12 +270,14 @@
                  state)))
 
 (define instance-field-values
-  (lambda (closure state)
+  (lambda (closure)
    (cadr closure)))
 
 (define instance-initial-fields
-  (lambda (true-type state)
-    '()))  
+  (lambda (type state)
+    (build-list (length (class-instance-field-names (state-lookup type
+                                                                  state)))
+                (const '()))))
   
 
 ;;; Bindings
