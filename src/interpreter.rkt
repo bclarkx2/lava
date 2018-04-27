@@ -3,8 +3,8 @@
 ;; Danny Miles
 ;; Kaius Reed
 
-#lang racket
-(provide (all-defined-out))
+;;; #lang racket
+;;; (provide (all-defined-out))
 (require "classParser.rkt")
 (require "functionParser.rkt")
 (require "simpleParser.rkt")
@@ -218,11 +218,11 @@
 (define class-closure
  (lambda (parent
           instance-field-names
-          static-functions
+          class-static-functions
           class-instance-functions)
   (list parent
         instance-field-names
-        static-functions
+        class-static-functions
         class-instance-functions)))
   
 
@@ -263,7 +263,7 @@
 
 (define instance-field-values
  (lambda (closure state)
-  (cadr closure)
+  (cadr closure)))
   
 
 ;;; Bindings
@@ -664,3 +664,55 @@
 (define func-name (lambda (exp) (cadr exp)))
 (define func-params (lambda (exp) (caddr exp)))
 (define func-def (lambda (exp) (cadddr exp)))
+
+
+;; Class definition
+
+(define state-class
+  (lambda (stmt s brk cont return throw)
+    (state-add-binding (class-name stmt)
+                       (class-closure (parent-class-name stmt)
+                                      (instance-field-names (body stmt))
+                                      (static-functions (body stmt))
+                                      (instance-functions (body stmt)))
+                       s)))
+
+(define class-name (lambda (stmt) (cadr stmt)))
+(define extends-clause (lambda (stmt) (caddr stmt)))
+(define parent-class-name
+  (lambda (stmt)
+    (if (null? (extends-clause stmt))
+      '()
+      (cadr (extends-clause stmt)))))
+(define body (lambda (stmt) (cadddr stmt)))  
+
+(define instance-field-names
+  (lambda (body)
+    (if (null? body)
+      body
+      (let* ([stmt (car body)]
+             [key (keyword stmt)])
+        (if (eq? key 'var)
+          (cons (varname stmt) (instance-field-names (cdr body)))
+          (instance-field-names (cdr body)))))))
+
+(define static-functions
+  (lambda (body)
+    (get-functions body (state-empty) 'static-function)))
+
+(define instance-functions
+  (lambda (body)
+    (get-functions body (state-empty) 'function)))
+
+(define get-functions
+  (lambda (body state signifier)
+    (if (null? body)
+      state  
+      (let* ([stmt (car body)]
+             [key (keyword stmt)])
+        (if (eq? key signifier)
+          (state-function-declaration stmt
+                                      (get-functions (cdr body)
+                                                     state
+                                                     signifier))
+          (get-functions (cdr body) state signifier))))))
