@@ -4,7 +4,8 @@
 ;; Kaius Reed
 
 #lang racket
-;;; (provide (all-defined-out))
+(provide (all-defined-out))
+
 (require "classParser.rkt")
 (require "functionParser.rkt")
 (require "simpleParser.rkt")
@@ -94,6 +95,11 @@
            return
            (mk-safe-throw throw s)))))))
 
+(define value-new
+  (lambda (e s)
+    (instance-closure (true-type e)
+                      (instance-initial-fields (true-type e) s))))
+
 (define value
   (lambda (e s throw)
     (let ([symbol? (lambda (sym) (eq? sym (operator e)))])
@@ -104,6 +110,7 @@
           ((bool-operator? (operator e)) (value-bool e s symbol? throw))
           ((symbol? 'funcall) (value-func e s throw))
           ((symbol? '=) (operand2 e s throw))
+          ((symbol? 'new) (value-new e s))
           (else (error 'badop "Undefined operator")))
         (cond
           ((number? e) e)
@@ -162,6 +169,8 @@
   (lambda (op e s throw)
     (op (value (operand1 e s throw) s throw)
         (value (operand2 e s throw) s throw))))
+
+(define true-type (lambda (e) (cadr e)))
 
 
 ;;; Closures
@@ -249,21 +258,25 @@
 ;; Instance closures
 
 (define instance-closure
- (lambda (true-type instance-field-values)
-  (list true-type instance-field-values)))
+  (lambda (true-type instance-field-values)
+    (list true-type instance-field-values)))
 
 (define instance-true-type-name
- (lambda (closure)
-  (car closure)))
+  (lambda (closure)
+    (car closure)))
 
 (define instance-true-type
- (lambda (closure state)
-  (state-lookup (instance-true-type-name closure)
-                state)))
+  (lambda (closure state)
+   (state-lookup (instance-true-type-name closure)
+                 state)))
 
 (define instance-field-values
- (lambda (closure state)
-  (cadr closure)))
+  (lambda (closure state)
+   (cadr closure)))
+
+(define instance-initial-fields
+  (lambda (true-type state)
+    '()))  
   
 
 ;;; Bindings
@@ -438,6 +451,8 @@
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
       ((eq? (keyword stmt) 'function) s)
       ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw) s))
+      ((eq? (keyword stmt) 'new) s)
+      ((eq? (keyword stmt) 'class) s)
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
