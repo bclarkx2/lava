@@ -5,6 +5,7 @@
 
 #lang racket
 (provide (all-defined-out))
+
 (require "classParser.rkt")
 (require "functionParser.rkt")
 (require "simpleParser.rkt")
@@ -20,7 +21,7 @@
 (define interpret-raise
   (lambda (filename)
      (value (list 'funcall 'main)
-            (state-global-first-pass (fallback-parser filename)
+            (class-global-first-pass (fallback-parser filename)
                                      (state-empty))
             default-throw)))
 
@@ -683,6 +684,22 @@
 
 
 ;; Class definition
+
+(define class-global-first-pass
+  (lambda (stmt-list s)
+    (cond
+      ((null? stmt-list) s)
+      ((not (list? stmt-list)) s)
+
+      ((list? (keyword stmt-list))
+       (class-global-first-pass (cdr stmt-list)
+                                (state-global-first-pass (car stmt-list)
+                                                         s)))
+
+      ((eq? (keyword stmt-list) 'class)
+       (state-class stmt-list s default-brk default-cont default-return default-throw))
+
+      (else s))))
 
 (define state-class
   (lambda (stmt s brk cont return throw)
