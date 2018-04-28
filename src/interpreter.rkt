@@ -271,6 +271,9 @@
  (lambda (closure)
   (list-ref closure 4)))
 
+(define get-closure-of
+  (lambda (class-name state)
+    (state-lookup class-name state)))
 
 ;; Instance closures
 
@@ -777,3 +780,25 @@
    (cons (state-lookup (car field-names) body-state)
          (instance-initial-fields (cdr field-names) body-state)))))
   
+;; Field functions -- fields stored so that parent class field names come before subclass field names
+(define field-lookup
+  (lambda (name currentType iclosure state)
+    (let ([index (get-field-index name (state-lookup currentType state) -1)])
+      (if (eq? -1 index)
+          (raise 'illegal-var-dereferencing)
+          (field-value-search index (instance-field-values iclosure))))))
+
+ ; Helper used in trick to determine which field value to select
+(define get-field-index
+  (lambda (name currentFieldList currentClosure accumulator)
+    (cond
+      ((and (null? currentFieldList) (null? (class-parent-name currentClosure state))) accumulator)
+      ((null? currentFieldList) (get-field-index name (class-instance-field-names (class-parent currentClosure state)) (class-parent currentClosure state) accumulator))
+      ((or (> 0 accumulator) (eq? name (car currentFieldList)) (get-field-index name currentFieldList (+ accumulator 1))))
+      (else (get-field-index name currentFieldList accumulator)))))
+
+(define field-value-search
+  (lambda (index instanceFields)
+    (if (eq? 0 index)
+        (car instanceFields)
+        (field-value-search (- index 1) instanceFields))))
