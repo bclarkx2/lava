@@ -768,8 +768,7 @@
   (list
    (lambda (state)
     (instance-closure classname
-     (instance-initial-fields (instance-field-names body)
-                              (state-global-first-pass body state)))))))
+     (top-layer-values(state-global-first-pass body state)))))))
   
 (define instance-initial-fields
  (lambda (field-names body-state)
