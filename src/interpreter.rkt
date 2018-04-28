@@ -12,19 +12,20 @@
 
 ; top-level interpret function -- throws errors
 (define interpret
-  (lambda (filename)
+  (lambda (filename classname)
     (with-handlers ([(lambda (msg) (error msg))
                      (lambda (msg) msg)])
-     (interpret-raise filename))))
+     (interpret-raise filename classname))))
 
 ; interpret helper that raises exceptions
 (define interpret-raise
-  (lambda (filename)
+  (lambda (filename classname)
      (value (list 'funcall 'main)
-            (class-global-first-pass (fallback-parser filename)
-                                     (state-empty))
+            (class-static-functions
+             (state-lookup classname
+             (class-global-first-pass (fallback-parser filename)
+                                     (state-empty))))
             default-throw)))
-
 
 ; all accepted parsers, in order of usage
 (define parsers
@@ -693,7 +694,7 @@
 
       ((list? (keyword stmt-list))
        (class-global-first-pass (cdr stmt-list)
-                                (state-global-first-pass (car stmt-list)
+                                (class-global-first-pass (car stmt-list)
                                                          s)))
 
       ((eq? (keyword stmt-list) 'class)
