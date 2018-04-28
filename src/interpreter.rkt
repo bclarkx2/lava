@@ -20,12 +20,18 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename classname)
-     (value (list 'funcall 'main)
-            (class-static-functions
-             (state-lookup classname
-             (class-global-first-pass (fallback-parser filename)
-                                     (state-empty))))
-            default-throw)))
+    (interpret-main classname (class-global-first-pass (fallback-parser filename)
+                                                       (state-empty)))))
+
+(define interpret-main
+ (lambda (classname state)
+  (value-func
+   (state-lookup 'main
+    (class-static-functions
+     (state-lookup classname state)))
+   state
+   default-throw)))
+  
 
 ; all accepted parsers, in order of usage
 (define parsers
@@ -83,14 +89,26 @@
       ((symbol? '!) (not (value (operand1 e s throw) s throw)))
       (else (error 'badop "Undefined bool operator")))))
 
-; Function calls
-(define value-func
- (lambda (e s throw)
+(define value-func2
+ (lambda (fclosure s throw)
   (call/cc (lambda (return)
    (state-remove-layer
     (state (call-func-def e s)
            (state-function-first-pass (call-func-def e s)
                                       (new-func-env e s throw))
+           default-brk
+           default-cont
+           return
+           (mk-safe-throw throw s)))))))
+
+; Function calls
+(define value-func
+ (lambda (closure e s throw)
+  (call/cc (lambda (return)
+   (state-remove-layer
+    (state (call-func-def2 closure)
+           (state-function-first-pass (call-func-def2 closure)
+                                      (new-func-env2 closure s throw))
            default-brk
            default-cont
            return
@@ -109,7 +127,7 @@
           ((null? (cdr e)) (value (car e) s throw))
           ((int-operator? (operator e)) (value-int e s symbol? throw))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw))
-          ((symbol? 'funcall) (value-func e s throw))
+          ((symbol? 'funcall) (value-func (closure e s) e s throw))
           ((symbol? '=) (operand2 e s throw))
           ((symbol? 'new) (value-new e s))
           (else (error 'badop "Undefined operator")))
@@ -178,9 +196,17 @@
 
 ;; Function closures
 
+(define call-func-params2 (lambda (closure) (car closure)))
+(define call-func-def2 (lambda (closure) (cadr closure)))
+(define call-func-env-procedure2 (lambda (closure) (caddr closure)))
+
 (define call-func-params (lambda (e s) (car (closure e s))))
 (define call-func-def (lambda (e s) (cadr (closure e s))))
 (define call-func-env-procedure (lambda (e s) (caddr (closure e s))))
+
+(define call-func-env2
+  (lambda (closure s)
+    ((call-func-env-procedure2 closure) s)))
 
 (define call-func-env
   (lambda (e s)
@@ -189,6 +215,14 @@
 (define closure
   (lambda (e s)
    (state-lookup (func-name e) s)))
+
+(define new-func-env2
+  (lambda (closure e s throw)
+   (resolve-params (state-add-layer (call-func-env2 closure s))
+                   s
+                   (call-func-params2 closure)
+                   (actual-params e)
+                   throw)))
 
 (define new-func-env
   (lambda (e s throw)
