@@ -29,6 +29,7 @@
    (state-lookup 'main
     (class-static-functions
      (state-lookup classname state)))
+   (list 'funcall 'main)
    state
    default-throw)))
   
@@ -89,17 +90,6 @@
       ((symbol? '!) (not (value (operand1 e s throw) s throw)))
       (else (error 'badop "Undefined bool operator")))))
 
-(define value-func2
- (lambda (fclosure s throw)
-  (call/cc (lambda (return)
-   (state-remove-layer
-    (state (call-func-def e s)
-           (state-function-first-pass (call-func-def e s)
-                                      (new-func-env e s throw))
-           default-brk
-           default-cont
-           return
-           (mk-safe-throw throw s)))))))
 
 ; Function calls
 (define value-func
@@ -108,7 +98,7 @@
    (state-remove-layer
     (state (call-func-def2 closure)
            (state-function-first-pass (call-func-def2 closure)
-                                      (new-func-env2 closure s throw))
+                                      (new-func-env2 closure e s throw))
            default-brk
            default-cont
            return
