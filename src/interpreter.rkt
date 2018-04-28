@@ -106,9 +106,7 @@
 
 (define value-new
   (lambda (e s)
-    ((car
-     (class-constructors
-      (state-lookup (true-type e) s)))
+    ((default-constructor (state-lookup (true-type e) s))
      s)))
 
 (define value
@@ -188,6 +186,17 @@
 
 ;; Function closures
 
+(define function-closure
+ (lambda (params
+          def
+          env-func
+          class-func)
+  (list
+   params
+   def
+   env-func
+   class-func)))
+
 (define call-func-params (lambda (closure) (car closure)))
 (define call-func-def (lambda (closure) (cadr closure)))
 (define call-func-env-procedure (lambda (closure) (caddr closure)))
@@ -232,6 +241,9 @@
   (lambda (e)
     (cddr e)))
 
+(define function-class
+ (lambda (fclosure state)
+  ((cadddr fclosure) state)))
 
 ;; Class closures
 
@@ -271,9 +283,14 @@
  (lambda (closure)
   (list-ref closure 4)))
 
+
 (define get-closure-of
   (lambda (class-name state)
     (state-lookup class-name state)))
+
+(define default-constructor
+ (lambda (closure)
+  (car (class-constructors closure))))
 
 ;; Instance closures
 
@@ -664,12 +681,13 @@
 ;; Function
 
 (define state-function-declaration
-  (lambda (exp s)
-    (state-add-binding (func-name exp) (list
+  (lambda (exp s current-type)
+    (state-add-binding (func-name exp) (function-closure
                                         (func-params exp)
                                         (func-def exp)
-                                        (mk-environment-func s))
-                                        s)))
+                                        (mk-environment-func s)
+                                        (mk-class-func s current-type))
+                                       s)))
 
 (define layer-count
   (lambda (s)
@@ -691,6 +709,12 @@
        (cons (top-layer s)
              (subenvironment (- num-layers 1)
                              (cdr s)))))))
+
+(define mk-class-func
+ (lambda (s current-type)
+  (lambda (call-state)
+   current-type)))
+  
 
 (define func-name (lambda (exp) (cadr exp)))
 (define func-params (lambda (exp) (caddr exp)))
@@ -720,8 +744,10 @@
     (state-add-binding (class-name stmt)
                        (class-closure (parent-class-name stmt)
                                       (instance-field-names (body stmt))
-                                      (static-functions (body stmt))
-                                      (instance-functions (body stmt))
+                                      (static-functions (body stmt)
+                                                        (class-name stmt))
+                                      (instance-functions (body stmt)
+                                                          (class-name stmt))
                                       (constructors (class-name stmt)
                                                     (body stmt)))
                        s)))
@@ -746,15 +772,21 @@
           (instance-field-names (cdr body)))))))
 
 (define static-functions
-  (lambda (body)
-    (get-functions body (state-empty) 'static-function)))
+  (lambda (body current-type)
+    (get-functions body
+                   (state-empty)
+                   'static-function
+                   current-type)))
 
 (define instance-functions
-  (lambda (body)
-    (get-functions body (state-empty) 'function)))
+  (lambda (body current-type)
+    (get-functions body
+                   (state-empty)
+                   'function
+                   current-type)))
 
 (define get-functions
-  (lambda (body state signifier)
+  (lambda (body state signifier current-type)
     (if (null? body)
       state  
       (let* ([stmt (car body)]
@@ -763,8 +795,13 @@
           (state-function-declaration stmt
                                       (get-functions (cdr body)
                                                      state
-                                                     signifier))
-          (get-functions (cdr body) state signifier))))))
+                                                     signifier
+                                                     current-type)
+                                      current-type)
+          (get-functions (cdr body)
+                         state
+                         signifier
+                         current-type))))))
 
 (define constructors
  (lambda (classname body)
