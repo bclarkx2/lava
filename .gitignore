@@ -7,4 +7,4 @@
 *.scm~
 *.scm#*
 .#*.scm
-interpreter.1
+interpreter.[0-9]*
