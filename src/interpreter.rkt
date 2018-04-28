@@ -253,11 +253,13 @@
  (lambda (parent
           instance-field-names
           class-static-functions
-          class-instance-functions)
+          class-instance-functions
+          class-constructors)
   (list parent
         instance-field-names
         class-static-functions
-        class-instance-functions)))
+        class-instance-functions
+        class-constructors)))
   
 
 (define class-parent-name (lambda (closure) (car closure)))
@@ -278,6 +280,10 @@
 (define class-instance-functions
  (lambda (closure)
   (cadddr closure)))
+
+(define class-constructors
+ (lambda (closure)
+  (list-ref closure 4)))
 
 
 ;; Instance closures
@@ -732,8 +738,10 @@
                        (class-closure (parent-class-name stmt)
                                       (instance-field-names (body stmt))
                                       (static-functions (body stmt))
-                                      (instance-functions (body stmt)))
-                       s)))
+                                      (instance-functions (body stmt))
+                                      (constructors (class-name stmt)
+                                                    (body stmt))
+                       s))))
 
 (define class-name (lambda (stmt) (cadr stmt)))
 (define extends-clause (lambda (stmt) (caddr stmt)))
@@ -774,3 +782,19 @@
                                                      state
                                                      signifier))
           (get-functions (cdr body) state signifier))))))
+
+(define constructors
+ (lambda (classname body)
+  (list
+   (lambda (state)
+    (instance-closure classname
+     (instance-initial-fields (instance-field-names body)
+                              (state-function-first-pass body state))))
+  
+(define instance-initial-fields
+ (lambda (field-names body-state)
+  (if (null? field-names)
+   '()
+   (cons (state-lookup (car field-names) body-state)
+         (instance-initial-fields (cdr field-names) body-state)))))
+  
