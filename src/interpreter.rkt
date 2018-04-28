@@ -106,8 +106,10 @@
 
 (define value-new
   (lambda (e s)
-    (instance-closure (true-type e)
-                      (instance-initial-fields (true-type e) s))))
+    ((car
+     (class-constructors
+      (state-lookup (true-type e) s)))
+     s)))
 
 (define value
   (lambda (e s throw)
@@ -288,12 +290,6 @@
 (define instance-field-values
   (lambda (closure)
    (cadr closure)))
-
-(define instance-initial-fields
-  (lambda (type state)
-    (build-list (length (class-instance-field-names (state-lookup type
-                                                                  state)))
-                (const '()))))
   
 
 ;;; Bindings
@@ -724,8 +720,8 @@
                                       (static-functions (body stmt))
                                       (instance-functions (body stmt))
                                       (constructors (class-name stmt)
-                                                    (body stmt))
-                       s))))
+                                                    (body stmt)))
+                       s)))
 
 (define class-name (lambda (stmt) (cadr stmt)))
 (define extends-clause (lambda (stmt) (caddr stmt)))
@@ -765,6 +761,7 @@
                                       (get-functions (cdr body)
                                                      state
                                                      signifier))
+          (get-functions (cdr body) state signifier))))))
 
 (define constructors
  (lambda (classname body)
@@ -772,7 +769,7 @@
    (lambda (state)
     (instance-closure classname
      (instance-initial-fields (instance-field-names body)
-                              (state-function-first-pass body state))))
+                              (state-global-first-pass body state)))))))
   
 (define instance-initial-fields
  (lambda (field-names body-state)
