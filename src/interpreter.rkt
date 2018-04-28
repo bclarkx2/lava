@@ -96,9 +96,9 @@
  (lambda (closure e s throw)
   (call/cc (lambda (return)
    (state-remove-layer
-    (state (call-func-def2 closure)
-           (state-function-first-pass (call-func-def2 closure)
-                                      (new-func-env2 closure e s throw))
+    (state (call-func-def closure)
+           (state-function-first-pass (call-func-def closure)
+                                      (new-func-env closure e s throw))
            default-brk
            default-cont
            return
@@ -186,39 +186,23 @@
 
 ;; Function closures
 
-(define call-func-params2 (lambda (closure) (car closure)))
-(define call-func-def2 (lambda (closure) (cadr closure)))
-(define call-func-env-procedure2 (lambda (closure) (caddr closure)))
-
-(define call-func-params (lambda (e s) (car (closure e s))))
-(define call-func-def (lambda (e s) (cadr (closure e s))))
-(define call-func-env-procedure (lambda (e s) (caddr (closure e s))))
-
-(define call-func-env2
-  (lambda (closure s)
-    ((call-func-env-procedure2 closure) s)))
+(define call-func-params (lambda (closure) (car closure)))
+(define call-func-def (lambda (closure) (cadr closure)))
+(define call-func-env-procedure (lambda (closure) (caddr closure)))
 
 (define call-func-env
-  (lambda (e s)
-    ((call-func-env-procedure e s) s)))
+  (lambda (closure s)
+    ((call-func-env-procedure closure) s)))
 
 (define closure
   (lambda (e s)
    (state-lookup (func-name e) s)))
 
-(define new-func-env2
-  (lambda (closure e s throw)
-   (resolve-params (state-add-layer (call-func-env2 closure s))
-                   s
-                   (call-func-params2 closure)
-                   (actual-params e)
-                   throw)))
-
 (define new-func-env
-  (lambda (e s throw)
-   (resolve-params (state-add-layer (call-func-env e s))
+  (lambda (closure e s throw)
+   (resolve-params (state-add-layer (call-func-env closure s))
                    s
-                   (call-func-params e s)
+                   (call-func-params closure)
                    (actual-params e)
                    throw)))
 
@@ -781,7 +765,6 @@
                                       (get-functions (cdr body)
                                                      state
                                                      signifier))
-          (get-functions (cdr body) state signifier))))))
 
 (define constructors
  (lambda (classname body)
