@@ -28,7 +28,7 @@
   (value-func
    (state-lookup 'main
     (class-static-functions
-     (state-lookup classname state)))
+     (state-lookup classname state '()))'())
    (default-this)
    (list 'funcall 'main)
    (state-add-binding (default-this) (default-this) state)
@@ -117,12 +117,12 @@
     (field-lookup (dot-member-part expr)
                   current-type
                   (state-lookup (dot-ref-part expr)
-                                state)
+                                state current-type)
                   state)))
 
 (define value-new
   (lambda (expr s current-type)
-    ((default-constructor (state-lookup (true-type expr) s))
+    ((default-constructor (state-lookup (true-type expr) s current-type))
      s)))
 
 (define value
@@ -133,9 +133,9 @@
           ((null? (cdr e)) (value (car e) s throw current-type))
           ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
-          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s)
+          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s current-type)
                                                          (funcall-name e)
-                                                         s)
+                                                         s current-type)
                                           (funcall-reference-name e)
                                           e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
@@ -147,7 +147,7 @@
           ((boolean? e) e)
           ((eq? 'true e) #t)
           ((eq? 'false e) #f)
-          (else (state-lookup e s)))))))
+          (else (state-lookup e s current-type)))))))
 
 
 ;; Value helpers
@@ -194,7 +194,7 @@
            (eq? 'true expr)
            (eq? 'false expr))
            expr)
-      (else (state-lookup expr s)))))
+      (else (state-lookup expr s current-type)))))
 
 (define compute
   (lambda (op e s throw current-type)
@@ -214,8 +214,8 @@
 
 ; (funcall expr, state) -> instance closure
 (define eval-reference
-  (lambda (expr state)
-    (state-lookup (funcall-reference-name expr) state)))
+  (lambda (expr state current-type)
+    (state-lookup (funcall-reference-name expr) state current-type)))
 
 ; (funcall expr) -> func name
 (define funcall-name
@@ -232,9 +232,9 @@
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
- (lambda (iclosure fname state)
+ (lambda (iclosure fname state current-type)
   (state-lookup fname
-                (class-instance-functions (instance-true-type iclosure state)))))
+                (class-instance-functions (instance-true-type iclosure state current-type)) current-type)))
 
 (define funcall-ref (lambda (funcall-expr) (cadr funcall-expr)))
 
@@ -264,10 +264,6 @@
 (define call-func-env
   (lambda (closure s)
     ((call-func-env-procedure closure) s)))
-
-(define closure
-  (lambda (e s)
-   (state-lookup (func-name e) s)))
 
 (define new-func-env
   (lambda (closure this e s throw current-type)
@@ -334,9 +330,9 @@
 (define class-parent-name (lambda (closure) (car closure)))
 
 (define class-parent
- (lambda (closure state)
+ (lambda (closure state current-type)
   (state-lookup (class-parent-name)
-                state)))
+                state current-type)))
 
 (define class-instance-field-names
  (lambda (closure)
@@ -354,11 +350,6 @@
  (lambda (closure)
   (list-ref closure 4)))
 
-
-(define get-closure-of
-  (lambda (class-name state)
-    (state-lookup class-name state)))
-
 (define default-constructor
  (lambda (closure)
   (car (class-constructors closure))))
@@ -374,9 +365,9 @@
     (car closure)))
 
 (define instance-true-type
-  (lambda (closure state)
+  (lambda (closure state current-type)
    (state-lookup (instance-true-type-name closure)
-                 state)))
+                 state current-type)))
 
 (define instance-field-values
   (lambda (closure)
@@ -410,14 +401,19 @@
               (state-set-binding var newValue (state-remaining s)))))))
 
 (define state-lookup
-  (lambda (var s current-type)
-    (if (null? (resolve-in-state var s))
-      (if (has-this? s)
-        (field-lookup var
-                      current-type
-                      (resolve-in-state var s)
-                      s)
-        (raise 'illegal-var-dereferencing)))))
+  (lambda (var lis current-type)
+    (cond
+      ((null? lis) (raise 'illegal-var-dereferencing))
+      ((equal? lis (state-empty)) (raise 'illegal-var-dereferencing))
+      ((equal? lis (layer-empty)) '())
+      ((is-state? lis)
+       (if (null? (state-lookup var (top-layer lis) current-type))
+           (state-lookup var (state-remaining lis) current-type)
+           (state-lookup var (top-layer lis) current-type)))
+      (else
+       (if (eq? var (car (layer-variables lis)))
+           (unbox (car (layer-values lis)))
+           (state-lookup var (layer-remaining lis) current-type))))))
 
 (define is-declared
   (lambda (var lis)
@@ -443,27 +439,6 @@
 
 
 ; Binding helpers
-
-; resolve
-(define resolve-in-state
-  (lambda (var lis)
-    (cond
-      ((null? lis) (raise 'illegal-var-dereferencing))
-      ((equal? lis (state-empty)) '())
-      ((equal? lis (layer-empty)) '())
-      ((is-state? lis)
-       (if (null? (state-lookup var (top-layer lis)))
-           (state-lookup var (state-remaining lis))
-           (state-lookup var (top-layer lis))))
-      (else
-       (if (eq? var (car (layer-variables lis)))
-           (unbox (car (layer-values lis)))
-           (state-lookup var (layer-remaining lis)))))))
-  
-(define has-this?
- (lambda (state)
-   (resolve-in-state 'this state))) 
-  
 
 (define change-binding
   (lambda (var newValue layer)
@@ -922,34 +897,34 @@
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
   (lambda (name current-type iclosure state)
-    (let* ([cclosure (state-lookup current-type state)]
+    (let* ([cclosure (state-lookup current-type state current-type)]
            [fields (class-instance-field-names cclosure)]
-           [index (get-field-index name fields cclosure -1)])
+           [index (get-field-index name fields cclosure -1 current-type)])
       (if (eq? -1 index)
           (raise 'illegal-var-dereferencing)
           (field-value-search index (instance-field-values iclosure))))))
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
-  (lambda (name fields cclosure acc)
+  (lambda (name fields cclosure acc current-type)
     (cond
       ((and (null? fields)
             (null? (class-parent-name cclosure)))
         acc)
       ((null? fields)
         (get-field-index name
-                         (class-instance-field-names (class-parent cclosure state))
-                         (class-parent cclosure state)
-                         acc))
+                         (class-instance-field-names (class-parent cclosure state current-type))
+                         (class-parent cclosure state current-type)
+                         acc current-type))
       ((or (>= acc 0)
            (eq? name (car fields)))
-        (get-field-index name (cdr fields) cclosure (+ acc 1)))
+        (get-field-index name (cdr fields) cclosure (+ acc 1) current-type))
       (else
-        (get-field-index name (cdr fields) cclosure acc)))))
+        (get-field-index name (cdr fields) cclosure acc current-type)))))
   
 
 (define field-value-search
   (lambda (index instanceFields)
-    (if (null? (unbox (list-ref instanceFields index)))
-      (raise 'unset-instance-field)
-      (unbox (list-ref instanceFields index)))))
+    (if (eq? 0 index)
+        (unbox (car instanceFields))
+        (field-value-search (- index 1) (cdr instanceFields)))))
