@@ -905,23 +905,35 @@
   
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
-  (lambda (name currentType iclosure state)
-    (let ([index (get-field-index name (state-lookup currentType state) -1)])
+  (lambda (name current-type iclosure state)
+    (let* ([cclosure (state-lookup current-type state)]
+           [fields (class-instance-field-names cclosure)]
+           [index (get-field-index name fields cclosure -1)])
       (if (eq? -1 index)
           (raise 'illegal-var-dereferencing)
           (field-value-search index (instance-field-values iclosure))))))
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
-  (lambda (name currentFieldList currentClosure accumulator)
+  (lambda (name fields cclosure acc)
     (cond
-      ((and (null? currentFieldList) (null? (class-parent-name currentClosure state))) accumulator)
-      ((null? currentFieldList) (get-field-index name (class-instance-field-names (class-parent currentClosure state)) (class-parent currentClosure state) accumulator))
-      ((or (> 0 accumulator) (eq? name (car currentFieldList)) (get-field-index name currentFieldList (+ accumulator 1))))
-      (else (get-field-index name currentFieldList accumulator)))))
+      ((and (null? fields)
+            (null? (class-parent-name cclosure)))
+        acc)
+      ((null? fields)
+        (get-field-index name
+                         (class-instance-field-names (class-parent cclosure state))
+                         (class-parent cclosure state)
+                         acc))
+      ((or (> acc 0)
+           (eq? name (car fields)))
+        (get-field-index name (cdr fields) cclosure (+ acc 1)))
+      (else
+        (get-field-index name (cdr fields) cclosure acc)))))
+  
 
 (define field-value-search
   (lambda (index instanceFields)
     (if (eq? 0 index)
-        (car instanceFields)
+        (unbox (car instanceFields))
         (field-value-search (- index 1) instanceFields))))

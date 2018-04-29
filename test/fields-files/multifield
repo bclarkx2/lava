@@ -1,0 +1,9 @@
+class A {
+    var x = 4;
+    var y = 8;
+    var z = 16;
+    static function main () {
+        var a = new A();
+        return a.z - (a.x + a.y);
+    }
+}

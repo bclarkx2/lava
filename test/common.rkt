@@ -42,7 +42,11 @@
   (with-handlers ([(lambda (msg) 'no-problem)
                     (lambda (msg) msg)])
     (interpret-raise filename classname))))
-                       
+
+(define assert-interpret-class-err
+  (lambda (file classname err [msg ""])
+    (assert err (test-interpret-class file classname) msg)))
+
 (define test-interpret
  (lambda (filename)
    (with-handlers ([(lambda (msg) 'no-problem)
