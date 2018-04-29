@@ -29,9 +29,11 @@
    (state-lookup 'main
     (class-static-functions
      (state-lookup classname state)))
+   (default-this)
    (list 'funcall 'main)
-   state
-   default-throw)))
+   (state-add-binding (default-this) (default-this) state)
+   default-throw
+   classname)))
   
 
 ; all accepted parsers, in order of usage
@@ -62,64 +64,106 @@
  
 ; Mathematical Operators
 (define value-int
-  (lambda (e s symbol? throw)
+  (lambda (e s symbol? throw current-type)
     (cond
       ((number? e) e)
       ((number? (car e)) (car e))
       ((and (symbol? '-) (unary? e))
-       (- 0 (value (operand1 e s throw) s throw)))
-      ((symbol? '+) (compute + e s throw))
-      ((symbol? '-) (compute - e s throw))
-      ((symbol? '*) (compute * e s throw))
-      ((symbol? '/) (compute quotient e s throw))
-      ((symbol? '%) (compute remainder e s throw))
+       (- 0 (value (operand1 e s throw current-type) s throw current-type)))
+      ((symbol? '+) (compute + e s throw current-type))
+      ((symbol? '-) (compute - e s throw current-type))
+      ((symbol? '*) (compute * e s throw current-type))
+      ((symbol? '/) (compute quotient e s throw current-type))
+      ((symbol? '%) (compute remainder e s throw current-type))
       (else (error 'badop "Undefined int operator")))))
 
 ; Comparison and Boolean Operations
 (define value-bool
-  (lambda (e s symbol? throw)
+  (lambda (e s symbol? throw current-type)
     (cond
-      ((symbol? '==) (compute eq? e s throw))
-      ((symbol? '!=) (compute (lambda (a b) (not (eq? a b))) e s throw))
-      ((symbol? '>) (compute > e s throw))
-      ((symbol? '<) (compute < e s throw))
-      ((symbol? '>=) (compute >= e s throw))
-      ((symbol? '<=) (compute <= e s throw))
-      ((symbol? '&&) (compute (lambda (a b) (and a b)) e s throw))
-      ((symbol? '||) (compute (lambda (a b) (or a b)) e s throw))
-      ((symbol? '!) (not (value (operand1 e s throw) s throw)))
+      ((symbol? '==) (compute eq? e s throw current-type))
+      ((symbol? '!=) (compute (lambda (a b) (not (eq? a b))) e s throw current-type))
+      ((symbol? '>) (compute > e s throw current-type))
+      ((symbol? '<) (compute < e s throw current-type))
+      ((symbol? '>=) (compute >= e s throw current-type))
+      ((symbol? '<=) (compute <= e s throw current-type))
+      ((symbol? '&&) (compute (lambda (a b) (and a b)) e s throw current-type))
+      ((symbol? '||) (compute (lambda (a b) (or a b)) e s throw current-type))
+      ((symbol? '!) (not (value (operand1 e s throw current-type) s throw current-type)))
       (else (error 'badop "Undefined bool operator")))))
 
 
 ; Function calls
 (define value-func
- (lambda (closure e s throw)
+ (lambda (closure this expr s throw current-type)
   (call/cc (lambda (return)
    (state-remove-layer
     (state (call-func-def closure)
            (state-function-first-pass (call-func-def closure)
-                                      (new-func-env closure e s throw))
+                                    (new-func-env closure this
+                                                          expr
+                                                          s
+                                                          throw
+                                                          current-type))
            default-brk
            default-cont
            return
-           (mk-safe-throw throw s)))))))
+           (mk-safe-throw throw s)
+           (function-class closure s)))))))
+
+; (funcall expr, state, cur) -> instance closure
+(define eval-reference
+  (lambda (expr state current-type)
+    (if (list? (ref-string expr))
+      (state-lookup (cadr (ref-string expr)) state)
+      (raise 'implicit-this))))
+
+; (funcall expr) -> func name
+(define eval-func-name
+  (lambda (expr)
+    (if (list? (ref-string expr))
+      (caddr (ref-string expr))
+      (cadr expr))))
+
+(define reference-name
+  (lambda (expr)
+    (if (list? (ref-string expr))
+      (cadr (ref-string expr))
+      (raise 'implicit-this-ref-name))))
+
+; (instance closure, function name, state) -> function closure
+(define method-lookup
+ (lambda (iclosure fname state)
+  (state-lookup fname
+                (class-instance-functions (instance-true-type iclosure state)))))
+
+(define value-dot
+  (lambda (expr state current-type)
+    (raise 'value-of-dot)))                     
+
+(define ref-string (lambda (expr) (cadr expr)))
 
 (define value-new
-  (lambda (e s)
-    ((default-constructor (state-lookup (true-type e) s))
+  (lambda (expr s current-type)
+    ((default-constructor (state-lookup (true-type expr) s))
      s)))
 
 (define value
-  (lambda (e s throw)
+  (lambda (e s throw current-type)
     (let ([symbol? (lambda (sym) (eq? sym (operator e)))])
       (if (list? e)
         (cond
-          ((null? (cdr e)) (value (car e) s throw))
-          ((int-operator? (operator e)) (value-int e s symbol? throw))
-          ((bool-operator? (operator e)) (value-bool e s symbol? throw))
-          ((symbol? 'funcall) (value-func (closure e s) e s throw))
-          ((symbol? '=) (operand2 e s throw))
-          ((symbol? 'new) (value-new e s))
+          ((null? (cdr e)) (value (car e) s throw current-type))
+          ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
+          ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
+          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s current-type)
+                                                         (eval-func-name e)
+                                                         s)
+                                          (reference-name e)
+                                          e s throw current-type))
+          ((symbol? '=) (operand2 e s throw current-type))
+          ((symbol? 'new) (value-new e s current-type))
+          ((symbol? 'dot) (value-dot e s current-type))
           (else (error 'badop "Undefined operator")))
         (cond
           ((number? e) e)
@@ -155,19 +199,20 @@
 
 (define unary?
   (lambda (lis)
-    (if (pair? (cddr lis))#f
-        #t)))
+    (not (pair? (cddr lis)))))
 
 (define operand1
-  (lambda (lis s throw) (operand (cadr lis) s throw)))
+  (lambda (lis s throw current-type)
+    (operand (cadr lis) s throw current-type)))
 
 (define operand2
-  (lambda (lis s throw) (operand (caddr lis) s throw)))
+  (lambda (lis s throw current-type)
+    (operand (caddr lis) s throw current-type)))
 
 (define operand
-  (lambda (expr s throw)
+  (lambda (expr s throw current-type)
     (cond
-      ((list? expr) (value expr s throw))
+      ((list? expr) (value expr s throw current-type))
       ((or (number? expr)
            (eq? 'true expr)
            (eq? 'false expr))
@@ -175,9 +220,15 @@
       (else (state-lookup expr s)))))
 
 (define compute
-  (lambda (op e s throw)
-    (op (value (operand1 e s throw) s throw)
-        (value (operand2 e s throw) s throw))))
+  (lambda (op e s throw current-type)
+    (op (value (operand1 e s throw current-type)
+               s
+               throw
+               current-type)
+        (value (operand2 e s throw current-type)
+               s
+               throw
+               current-type))))
 
 (define true-type (lambda (e) (cadr e)))
 
@@ -210,31 +261,41 @@
    (state-lookup (func-name e) s)))
 
 (define new-func-env
-  (lambda (closure e s throw)
+  (lambda (closure this e s throw current-type)
    (resolve-params (state-add-layer (call-func-env closure s))
                    s
-                   (call-func-params closure)
-                   (actual-params e)
-                   throw)))
+                   (cons 'this (call-func-params closure))
+                   (cons this (actual-params e))
+                   throw
+                   current-type)))
 
 (define resolve-params
-  (lambda (func-env cur-state formal actual throw)
+  (lambda (func-env cur-state formal actual throw current-type)
     (cond
       ((and (null? formal) (null? actual))
        func-env)
       ((xor (null? formal) (null? actual))
        (raise 'parameter-mismatch))
       (else
-       (resolve-params (resolve-param func-env cur-state formal actual throw)
+       (resolve-params (resolve-param func-env
+                                      cur-state
+                                      formal
+                                      actual
+                                      throw
+                                      current-type)
                        cur-state
                        (cdr formal)
                        (cdr actual)
-                       throw)))))
+                       throw
+                       current-type)))))
 
 (define resolve-param
-  (lambda (func-env cur-state formal actual throw)
+  (lambda (func-env cur-state formal actual throw current-type)
     (state-add-binding (car formal)
-                       (value (car actual) cur-state throw)
+                       (value (car actual)
+                              cur-state
+                              throw
+                              current-type)
                        func-env)))
 
 (define actual-params
@@ -244,6 +305,7 @@
 (define function-class
  (lambda (fclosure state)
   ((cadddr fclosure) state)))
+
 
 ;; Class closures
 
@@ -421,12 +483,13 @@
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
 (define default-return (lambda (x) (raise 'illegal-return)))
+(define default-this (lambda () 'fake-this))
 
 
 ;;; State Mappings
 
 (define state-global-first-pass
-  (lambda (stmt-list s)
+  (lambda (stmt-list s current-type)
     (cond
       ((null? stmt-list) s)
       ((not (list? stmt-list)) s)
@@ -435,13 +498,21 @@
       ((list? (keyword stmt-list))
         (state-global-first-pass (cdr stmt-list)
                                  (state-global-first-pass (car stmt-list)
-                                                          s)))
+                                                          s
+                                                          current-type)
+                                 current-type))
 
       ; remaining operations delegated to helpers
       ((eq? (keyword stmt-list) 'function)
-       (state-function-declaration stmt-list s)) 
+       (state-function-declaration stmt-list s current-type)) 
       ((eq? (keyword stmt-list) 'var)
-       (state-var stmt-list s default-brk default-cont default-return default-throw))
+       (state-var stmt-list
+                  s
+                  default-brk
+                  default-cont
+                  default-return
+                  default-throw
+                  current-type))
       
       (else s))))
 
@@ -460,39 +531,42 @@
       (else s))))
 
 (define state
-  (lambda (stmt s brk cont return throw)
+  (lambda (stmt s brk cont return throw current-type)
     (cond
 
       ; null and return statements do not alter state
       ((null? stmt) s)
       ((not (list? stmt)) s)
-      ((eq? (keyword stmt) 'return) (handle-return stmt s return throw))
+      ((eq? (keyword stmt) 'return) (handle-return stmt s return throw current-type))
 
       ; may be a list of statements
-      ((list? (keyword stmt)) (state-list stmt s brk cont return throw))
+      ((list? (keyword stmt)) (state-list stmt s brk cont return throw current-type))
 
       ; remaining operations delegated to helpers
-      ((eq? (keyword stmt) '=) (state-assign stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'if) (state-if stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'var) (state-var stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'while) (state-while stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw))
-      ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw))
+      ((eq? (keyword stmt) '=) (state-assign stmt s brk cont return throw current-type))
+      ((eq? (keyword stmt) 'if) (state-if stmt s brk cont return throw current-type))
+      ((eq? (keyword stmt) 'var) (state-var stmt s brk cont return throw current-type))
+      ((eq? (keyword stmt) 'while) (state-while stmt s brk cont return throw current-type))
+      ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw current-type))
+      ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw current-type))
       ((eq? (keyword stmt) 'function) s)
-      ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw) s))
+      ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw current-type) s))
       ((eq? (keyword stmt) 'new) s)
       ((eq? (keyword stmt) 'class) s)
 
       ; goto keywords
       ((eq? (keyword stmt) 'break) (brk s))
       ((eq? (keyword stmt) 'continue) (cont s))
-      ((eq? (keyword stmt) 'throw) (handle-throw stmt s throw))
+      ((eq? (keyword stmt) 'throw) (handle-throw stmt s throw current-type))
 
       ; assignment
       ((operator? (keyword stmt))
        (if (unary? stmt)
-           (state (cdr stmt) s brk cont return throw)
-           (state (varexpr stmt) (state (varname stmt) s brk cont return throw) brk cont return throw)))
+           (state (cdr stmt) s brk cont return throw current-type)
+           (state (varexpr stmt)
+                  (state (varname stmt)
+                         s brk cont return throw current-type)
+                  brk cont return throw)))
       
       (else s))))
 
@@ -503,34 +577,34 @@
 ;; Handlers
 
 (define handle-throw
- (lambda (stmt s throw)
-  (throw s (value (cdr stmt) s throw))))
+ (lambda (stmt s throw current-type)
+  (throw s (value (cdr stmt) s throw current-type))))
 
 (define handle-return
-  (lambda (stmt s return throw)
+  (lambda (stmt s return throw current-type)
     (cond 
-      ((eq? (value (cdr stmt) s throw) #t) (return 'true))
-      ((eq? (value (cdr stmt) s throw) #f) (return 'false))
-      (else (return (value (cdr stmt) s throw))))))
+      ((eq? (value (cdr stmt) s throw current-type) #t) (return 'true))
+      ((eq? (value (cdr stmt) s throw current-type) #f) (return 'false))
+      (else (return (value (cdr stmt) s throw current-type))))))
 
 
 ;; Statement list
 
 (define state-list
- (lambda (stmt s brk cont return throw)
+ (lambda (stmt s brk cont return throw current-type)
   (state (cdr stmt)
-         (state (car stmt) s brk cont return throw)
-         brk cont return throw)))
+         (state (car stmt) s brk cont return throw current-type)
+         brk cont return throw current-type)))
 
 
 ;; Assignment
 
 (define state-assign
-  (lambda (stmt s brk cont return throw)
+  (lambda (stmt s brk cont return throw current-type)
     (if (is-declared (varname stmt) s)
         (state-set-binding
          (varname stmt)
-         (value (varexpr stmt) s throw)
+         (value (varexpr stmt) s throw current-type)
          s)
          ;;; (state (varexpr stmt) s brk cont return throw))
         (raise 'assign-before-declare))))
@@ -545,14 +619,14 @@
 ;; If
 
 (define state-if
-  (lambda (stmt s brk cont return throw)
-    (if (value (condition stmt) s throw)
+  (lambda (stmt s brk cont return throw current-type)
+    (if (value (condition stmt) s throw current-type)
         (state (stmt1 stmt)
-               (state (condition stmt) s brk cont return throw)
-               brk cont return throw)
+               (state (condition stmt) s brk cont return throw current-type)
+               brk cont return throw current-type)
         (state (stmt2 stmt)
-               (state (condition stmt) s brk cont return throw)
-               brk cont return throw))))
+               (state (condition stmt) s brk cont return throw current-type)
+               brk cont return throw current-type))))
 
 (define condition (lambda (stmt) (cadr stmt)))
 (define stmt1 (lambda (stmt) (caddr stmt)))
@@ -566,13 +640,13 @@
 ;; Var
 
 (define state-var
-  (lambda (stmt s brk cont return throw)
+  (lambda (stmt s brk cont return throw current-type)
     (if (is-declared-top-layer (varname stmt) s)
         (raise 'illegal-var-use)
         (if (has-initialization stmt)
             (state-add-binding
              (varname stmt)
-             (value (initialization stmt) s throw)
+             (value (initialization stmt) s throw current-type)
              s)
              ;;; (state (initialization stmt) s brk cont return throw))
             (state-add-binding
@@ -588,18 +662,18 @@
 ;; While
 
 (define state-while
-  (lambda (stmt s brk cont return throw)
+  (lambda (stmt s brk cont return throw current-type)
    (call/cc (lambda (while-brk)
-     (if (value (condition stmt) s throw)
+     (if (value (condition stmt) s throw current-type)
          (state stmt
                 (call/cc (lambda (while-cont) 
                  (state (loopbody stmt)
                         (state (condition stmt)
                                s
-                               brk cont return throw)
-                        while-brk while-cont return throw)))
-                 while-brk cont return throw)
-          (state (condition stmt) s brk cont return throw))))))
+                               brk cont return throw current-type)
+                        while-brk while-cont return throw current-type)))
+                 while-brk cont return throw current-type)
+          (state (condition stmt) s brk cont return throw current-type))))))
 
 (define loopbody
   (lambda (stmt) (caddr stmt)))
@@ -608,11 +682,15 @@
 ;; Block
 
 (define state-block
- (lambda (stmt s brk cont return throw)
+ (lambda (stmt s brk cont return throw current-type)
   (state-remove-layer
    (state (block-contents stmt) 
           (state-add-layer s)
-          (lambda (v) (brk (state-remove-layer v))) (lambda (v) (cont (state-remove-layer v))) return (lambda (state val) (throw (state-remove-layer state) val))))))
+          (lambda (v) (brk (state-remove-layer v)))
+          (lambda (v) (cont (state-remove-layer v)))
+          return 
+          (lambda (state val)
+           (throw (state-remove-layer state) val))))))
 
 (define block-contents (lambda (stmt) (cdr stmt)))
 
@@ -620,32 +698,36 @@
 ;; Try
 
 (define state-try
- (lambda (stmt s brk cont return throw)
+ (lambda (stmt s brk cont return throw current-type)
     (state (finally stmt)
            (call/cc (lambda (try-state)
             (state (try stmt)
                    s
-                   (break-that-does-finally stmt brk cont return throw) cont return
+                   (break-that-does-finally stmt brk cont return throw current-type) cont return
                     (throw-that-does-catch stmt
                                            try-state
                                            (break-that-does-finally stmt brk cont return throw)
                                            cont
                                            return
-                                           throw))))
-           brk cont return throw)))
+                                           throw
+                                           current-type))))
+           brk cont return throw current-type)))
 
 (define break-that-does-finally
-  (lambda (stmt brk cont return throw)
+  (lambda (stmt brk cont return throw current-type)
     (lambda (exiting-state)
-      (brk (state (finally stmt) exiting-state brk cont return throw)))))
+      (brk (state (finally stmt)
+                  exiting-state 
+                  brk cont return throw
+                  current-type)))))
 
 (define throw-that-does-catch
- (lambda (stmt result-state brk cont return throw)
+ (lambda (stmt result-state brk cont return throw current-type)
   (lambda (aborted-throw-state throw-val)
    (result-state
       (state (block-form-of-catch stmt throw-val)
              aborted-throw-state
-             brk cont return throw)))))
+             brk cont return throw current-type)))))
 
 (define block-form-of-catch
   (lambda (stmt throw-val)
@@ -744,8 +826,8 @@
                                                         (class-name stmt))
                                       (instance-functions (body stmt)
                                                           (class-name stmt))
-                                      (constructors (class-name stmt)
-                                                    (body stmt)))
+                                      (constructors (body stmt)
+                                                    (class-name stmt)))
                        s)))
 
 (define class-name (lambda (stmt) (cadr stmt)))
@@ -800,11 +882,13 @@
                          current-type))))))
 
 (define constructors
- (lambda (classname body)
+ (lambda (body classname)
   (list
    (lambda (state)
     (instance-closure classname
-     (top-layer-values(state-global-first-pass body state)))))))
+     (top-layer-values(state-global-first-pass body
+                                               state
+                                               classname)))))))
   
 (define instance-initial-fields
  (lambda (field-names body-state)
