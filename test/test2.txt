@@ -3,8 +3,12 @@ class A {
     return 5;
   }
 
+  function g() {
+    return f() + 2;
+  }
+
   static function main() {
     var a = new A();
-    return a.f();
+    return a.g();
   }
 }

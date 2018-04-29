@@ -100,11 +100,11 @@
    (state-remove-layer
     (state (call-func-def closure)
            (state-function-first-pass (call-func-def closure)
-                                    (new-func-env closure this
-                                                          expr
-                                                          s
-                                                          throw
-                                                          current-type))
+                                      (new-func-env closure this
+                                                            expr
+                                                            s
+                                                            throw
+                                                            current-type))
            default-brk
            default-cont
            return
@@ -116,7 +116,7 @@
   (lambda (expr state current-type)
     (if (list? (ref-string expr))
       (state-lookup (cadr (ref-string expr)) state)
-      (raise 'implicit-this))))
+      (state-lookup 'this state))))
 
 ; (funcall expr) -> func name
 (define eval-func-name
@@ -129,7 +129,7 @@
   (lambda (expr)
     (if (list? (ref-string expr))
       (cadr (ref-string expr))
-      (raise 'implicit-this-ref-name))))
+      'this)))
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
