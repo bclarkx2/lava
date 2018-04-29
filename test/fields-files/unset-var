@@ -1,0 +1,7 @@
+class A {
+    var x;
+    static function main () {
+        var a = new A();
+        return a.x;
+    }
+}

@@ -934,6 +934,6 @@
 
 (define field-value-search
   (lambda (index instanceFields)
-    (if (eq? 0 index)
-        (unbox (car instanceFields))
-        (field-value-search (- index 1) (cdr instanceFields)))))
+    (if (null? (unbox (list-ref instanceFields index)))
+      (raise 'unset-instance-field)
+      (unbox (list-ref instanceFields index)))))

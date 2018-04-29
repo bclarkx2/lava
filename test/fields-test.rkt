@@ -16,3 +16,6 @@
                             'A
                             'illegal-var-dereferencing)
 (assert (test-interpret-class "fields-files/multifield" 'A) 4)
+(assert-interpret-class-err "fields-files/unset-var"
+                            'A
+                            'unset-instance-field)
