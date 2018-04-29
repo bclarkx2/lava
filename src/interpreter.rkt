@@ -111,37 +111,10 @@
            (mk-safe-throw throw s)
            (function-class closure s)))))))
 
-; (funcall expr, state, cur) -> instance closure
-(define eval-reference
-  (lambda (expr state current-type)
-    (if (list? (ref-string expr))
-      (state-lookup (cadr (ref-string expr)) state)
-      (state-lookup 'this state))))
-
-; (funcall expr) -> func name
-(define eval-func-name
-  (lambda (expr)
-    (if (list? (ref-string expr))
-      (caddr (ref-string expr))
-      (cadr expr))))
-
-(define reference-name
-  (lambda (expr)
-    (if (list? (ref-string expr))
-      (cadr (ref-string expr))
-      'this)))
-
-; (instance closure, function name, state) -> function closure
-(define method-lookup
- (lambda (iclosure fname state)
-  (state-lookup fname
-                (class-instance-functions (instance-true-type iclosure state)))))
 
 (define value-dot
   (lambda (expr state current-type)
     (raise 'value-of-dot)))                     
-
-(define ref-string (lambda (expr) (cadr expr)))
 
 (define value-new
   (lambda (expr s current-type)
@@ -156,8 +129,8 @@
           ((null? (cdr e)) (value (car e) s throw current-type))
           ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
-          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s current-type)
-                                                         (eval-func-name e)
+          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s)
+                                                         (funcall-name e)
                                                          s)
                                           (reference-name e)
                                           e s throw current-type))
@@ -231,6 +204,35 @@
                current-type))))
 
 (define true-type (lambda (e) (cadr e)))
+
+
+;;; Method binding
+
+; (funcall expr, state) -> instance closure
+(define eval-reference
+  (lambda (expr state)
+    (state-lookup (reference-name expr) state)))
+
+; (funcall expr) -> func name
+(define funcall-name
+  (lambda (expr)
+    (if (list? (ref-string expr))
+      (caddr (ref-string expr))
+      (cadr expr))))
+
+(define reference-name
+  (lambda (expr)
+    (if (list? (ref-string expr))
+      (cadr (ref-string expr))
+      'this)))
+
+; (instance closure, function name, state) -> function closure
+(define method-lookup
+ (lambda (iclosure fname state)
+  (state-lookup fname
+                (class-instance-functions (instance-true-type iclosure state)))))
+
+(define ref-string (lambda (expr) (cadr expr)))
 
 
 ;;; Closures
