@@ -900,7 +900,7 @@
    (lambda (state)
     (instance-closure classname
      (top-layer-values(state-global-first-pass body
-                                               state
+                                               (state-empty)
                                                classname)))))))
   
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
@@ -925,7 +925,7 @@
                          (class-instance-field-names (class-parent cclosure state))
                          (class-parent cclosure state)
                          acc))
-      ((or (> acc 0)
+      ((or (>= acc 0)
            (eq? name (car fields)))
         (get-field-index name (cdr fields) cclosure (+ acc 1)))
       (else
@@ -936,4 +936,4 @@
   (lambda (index instanceFields)
     (if (eq? 0 index)
         (unbox (car instanceFields))
-        (field-value-search (- index 1) instanceFields))))
+        (field-value-search (- index 1) (cdr instanceFields)))))
