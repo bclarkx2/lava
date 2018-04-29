@@ -410,19 +410,14 @@
               (state-set-binding var newValue (state-remaining s)))))))
 
 (define state-lookup
-  (lambda (var lis)
-    (cond
-      ((null? lis) (raise 'illegal-var-dereferencing))
-      ((equal? lis (state-empty)) (raise 'illegal-var-dereferencing))
-      ((equal? lis (layer-empty)) '())
-      ((is-state? lis)
-       (if (null? (state-lookup var (top-layer lis)))
-           (state-lookup var (state-remaining lis))
-           (state-lookup var (top-layer lis))))
-      (else
-       (if (eq? var (car (layer-variables lis)))
-           (unbox (car (layer-values lis)))
-           (state-lookup var (layer-remaining lis)))))))
+  (lambda (var s current-type)
+    (if (null? (resolve-in-state var s))
+      (if (has-this? s)
+        (field-lookup var
+                      current-type
+                      (resolve-in-state var s)
+                      s)
+        (raise 'illegal-var-dereferencing)))))
 
 (define is-declared
   (lambda (var lis)
@@ -448,6 +443,27 @@
 
 
 ; Binding helpers
+
+; resolve
+(define resolve-in-state
+  (lambda (var lis)
+    (cond
+      ((null? lis) (raise 'illegal-var-dereferencing))
+      ((equal? lis (state-empty)) '())
+      ((equal? lis (layer-empty)) '())
+      ((is-state? lis)
+       (if (null? (state-lookup var (top-layer lis)))
+           (state-lookup var (state-remaining lis))
+           (state-lookup var (top-layer lis))))
+      (else
+       (if (eq? var (car (layer-variables lis)))
+           (unbox (car (layer-values lis)))
+           (state-lookup var (layer-remaining lis)))))))
+  
+(define has-this?
+ (lambda (state)
+   (resolve-in-state 'this state))) 
+  
 
 (define change-binding
   (lambda (var newValue layer)
