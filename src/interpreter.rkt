@@ -401,19 +401,15 @@
               (state-set-binding var newValue (state-remaining s)))))))
 
 (define state-lookup
-  (lambda (var lis current-type)
-    (cond
-      ((null? lis) (raise 'illegal-var-dereferencing))
-      ((equal? lis (state-empty)) (raise 'illegal-var-dereferencing))
-      ((equal? lis (layer-empty)) '())
-      ((is-state? lis)
-       (if (null? (state-lookup var (top-layer lis) current-type))
-           (state-lookup var (state-remaining lis) current-type)
-           (state-lookup var (top-layer lis) current-type)))
-      (else
-       (if (eq? var (car (layer-variables lis)))
-           (unbox (car (layer-values lis)))
-           (state-lookup var (layer-remaining lis) current-type))))))
+  (lambda (var s current-type)
+    (if (null? (resolve-in-state var s current-type))
+      (if (has-this? s current-type)
+        (field-lookup var
+                      current-type
+                      (resolve-in-state var s current-type)
+                      s)
+        (raise 'illegal-var-dereferencing))
+      (resolve-in-state var s current-type))))
 
 (define is-declared
   (lambda (var lis)
@@ -439,6 +435,27 @@
 
 
 ; Binding helpers
+
+; resolve
+(define resolve-in-state
+  (lambda (var lis current-type)
+    (cond
+      ((null? lis) (raise 'illegal-var-dereferencing))
+      ((equal? lis (state-empty)) '())
+      ((equal? lis (layer-empty)) '())
+      ((is-state? lis)
+       (if (null? (resolve-in-state var (top-layer lis) current-type))
+           (resolve-in-state var (state-remaining lis) current-type)
+           (resolve-in-state var (top-layer lis) current-type)))
+      (else
+       (if (eq? var (car (layer-variables lis)))
+           (unbox (car (layer-values lis)))
+           (resolve-in-state var (layer-remaining lis) current-type))))))
+  
+(define has-this?
+ (lambda (state current-type)
+   (resolve-in-state 'this state current-type))) 
+  
 
 (define change-binding
   (lambda (var newValue layer)
@@ -925,6 +942,6 @@
 
 (define field-value-search
   (lambda (index instanceFields)
-    (if (eq? 0 index)
-        (unbox (car instanceFields))
-        (field-value-search (- index 1) (cdr instanceFields)))))
+    (if (null? (unbox (list-ref instanceFields index)))
+      (raise 'unset-instance-field)
+      (unbox (list-ref instanceFields index)))))

@@ -45,7 +45,7 @@
 
 (define assert-interpret-class-err
   (lambda (file classname err [msg ""])
-    (assert err (test-interpret-class file classname) msg)))
+    (assert (test-interpret-class file classname) err msg)))
 
 (define test-interpret
  (lambda (filename)
