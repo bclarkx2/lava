@@ -114,7 +114,11 @@
 
 (define value-dot
   (lambda (expr state current-type)
-    (raise 'value-of-dot)))                     
+    (field-lookup (dot-member-part expr)
+                  current-type
+                  (state-lookup (dot-ref-part expr)
+                                state)
+                  state)))
 
 (define value-new
   (lambda (expr s current-type)
@@ -132,7 +136,7 @@
           ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s)
                                                          (funcall-name e)
                                                          s)
-                                          (reference-name e)
+                                          (funcall-reference-name e)
                                           e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
@@ -211,19 +215,19 @@
 ; (funcall expr, state) -> instance closure
 (define eval-reference
   (lambda (expr state)
-    (state-lookup (reference-name expr) state)))
+    (state-lookup (funcall-reference-name expr) state)))
 
 ; (funcall expr) -> func name
 (define funcall-name
   (lambda (expr)
-    (if (list? (ref-string expr))
-      (caddr (ref-string expr))
+    (if (list? (funcall-ref expr))
+      (dot-member-part (funcall-ref expr))
       (cadr expr))))
 
-(define reference-name
+(define funcall-reference-name
   (lambda (expr)
-    (if (list? (ref-string expr))
-      (cadr (ref-string expr))
+    (if (list? (funcall-ref expr))
+      (dot-ref-part (funcall-ref expr))
       'this)))
 
 ; (instance closure, function name, state) -> function closure
@@ -232,8 +236,11 @@
   (state-lookup fname
                 (class-instance-functions (instance-true-type iclosure state)))))
 
-(define ref-string (lambda (expr) (cadr expr)))
+(define funcall-ref (lambda (funcall-expr) (cadr funcall-expr)))
 
+(define dot-ref-part (lambda (dot-expr) (cadr dot-expr)))
+(define dot-member-part (lambda (dot-expr) (caddr dot-expr)))
+  
 
 ;;; Closures
 
@@ -895,13 +902,6 @@
      (top-layer-values(state-global-first-pass body
                                                state
                                                classname)))))))
-  
-(define instance-initial-fields
- (lambda (field-names body-state)
-  (if (null? field-names)
-   '()
-   (cons (state-lookup (car field-names) body-state)
-         (instance-initial-fields (cdr field-names) body-state)))))
   
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
