@@ -141,7 +141,7 @@
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
           ((symbol? 'dot) (value-dot e s current-type))
-          (else (error 'badop "Undefined operator")))
+          (else e))
         (cond
           ((number? e) e)
           ((boolean? e) e)
