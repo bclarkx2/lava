@@ -33,10 +33,31 @@
         110
         "Test 6")
 
-;;; (assert 26 (test-interpret-class "int4-files/7" 'C) "Test 7")
-;;; (assert 117 (test-interpret-class "int4-files/8" 'Square))
-;;; (assert 32 (test-interpret-class "int4-files/9" 'Square))
-;;; (assert 15 (test-interpret-class "int4-files/10" 'List))
-;;; (assert 123456 (test-interpret-class "int4-files/11" 'List))
-;;; (assert 5285 (test-interpret-class "int4-files/12" 'List))
-;;; (assert -716 (test-interpret-class "int4-files/13" 'C))
+(assert (test-interpret-class "int4-files/7" 'C)
+        26
+        "Test 7")
+
+(assert (test-interpret-class "int4-files/8" 'Square)
+        117
+        "Test 8")
+
+(assert (test-interpret-class "int4-files/9" 'Square)
+        32
+        "Test 9")
+
+(assert (test-interpret-class "int4-files/10" 'List)
+        15
+        "Test 10")
+
+(assert (test-interpret-class "int4-files/11" 'List)
+        123456
+        "Test 11")
+
+(assert (test-interpret-class "int4-files/12" 'List)
+        5285
+        "Test 12")
+
+(assert (test-interpret-class "int4-files/13" 'C)
+        -716
+        "Test 13")
+
