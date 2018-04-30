@@ -458,7 +458,7 @@
   
 (define has-this?
  (lambda (state current-type)
-   (resolve-in-state 'this state current-type))) 
+   (not (null? (resolve-in-state 'this state current-type))))) 
   
 
 (define change-binding
