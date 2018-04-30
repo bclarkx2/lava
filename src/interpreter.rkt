@@ -418,6 +418,9 @@
 (define is-declared
   (lambda (var lis)
     (cond
+      ;;; (with-handlers ([(lambda (err) #f)
+      ;;;                  (lambda (result) #t)])
+      ;;;   (state-lookup var lis current-type)))))
       ((null? lis) #f)
       ((equal? lis (layer-empty)) #f)
       ((is-state? lis) (or (is-declared var (top-layer lis))
@@ -623,13 +626,24 @@
 
 (define state-assign
   (lambda (stmt s brk cont return throw current-type)
-    (if (is-declared (varname stmt) s)
-        (state-set-binding
-         (varname stmt)
-         (value (varexpr stmt) s throw current-type)
-         s)
-         ;;; (state (varexpr stmt) s brk cont return throw))
-        (raise 'assign-before-declare))))
+    (if (list? (varname stmt))
+      (field-update (dot-member-part (varname stmt))
+                        current-type
+                        (state-lookup (dot-ref-part (varname stmt))
+                                      s
+                                      current-type)
+                        s
+                        (value (varexpr stmt) s throw current-type))
+      (if (null? (resolve-in-state (varname stmt) s current-type))
+          (field-update (dot-member-part (varname stmt))
+                        current-type
+                        (state-lookup 'this s current-type)
+                        s
+                        (value (varexpr stmt) s throw current-type))
+          (state-set-binding
+           (varname stmt)
+           (value (varexpr stmt) s throw current-type)
+           s)))))
 
 (define varname
   (lambda (stmt) (cadr stmt)))
@@ -920,7 +934,18 @@
            [index (get-field-index name fields cclosure -1 current-type)])
       (if (eq? -1 index)
           (raise 'illegal-var-dereferencing)
-          (field-value-search index (instance-field-values iclosure))))))
+          (field-value index (instance-field-values iclosure))))))
+
+(define field-update
+ (lambda (name current-type iclosure state new-val)
+  (let* ([cclosure (state-lookup current-type state current-type)]
+         [fields (class-instance-field-names cclosure)]
+         [index (get-field-index name fields cclosure -1 current-type)])
+      (if (eq? -1 index)
+          (raise 'illegal-var-assignment)
+          (begin
+            (field-set index (instance-field-values iclosure) new-val)
+            state)))))
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
@@ -939,10 +964,17 @@
         (get-field-index name (cdr fields) cclosure (+ acc 1) current-type))
       (else
         (get-field-index name (cdr fields) cclosure acc current-type)))))
-  
 
-(define field-value-search
+(define field-box
+ (lambda (index instanceFields)
+  (list-ref instanceFields index)))
+
+(define field-set
+ (lambda (index instanceFields new-val)
+  (set-box! (field-box index instanceFields) new-val)))
+
+(define field-value
   (lambda (index instanceFields)
-    (if (null? (unbox (list-ref instanceFields index)))
+    (if (null? (unbox (field-box index instanceFields)))
       (raise 'unset-instance-field)
-      (unbox (list-ref instanceFields index)))))
+      (unbox (field-box index instanceFields)))))

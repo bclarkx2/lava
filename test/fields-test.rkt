@@ -41,3 +41,5 @@
 (assert (test-interpret-class "fields-files/local-shadows-instance-field" 'A) 2)
 
 (assert (test-interpret-class "fields-files/explicit-this" 'A) 5)
+
+(assert (test-interpret-class "fields-files/update-field" 'A) 5)
