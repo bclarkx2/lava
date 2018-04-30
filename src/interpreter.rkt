@@ -7,8 +7,6 @@
 (provide (all-defined-out))
 
 (require "classParser.rkt")
-(require "functionParser.rkt")
-(require "simpleParser.rkt")
 
 ; top-level interpret function -- throws errors
 (define interpret
@@ -20,45 +18,23 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename classname)
-    (interpret-main classname (state-classes (fallback-parser filename)
+    (interpret-main classname (state-classes (parser filename)
                                              (state-empty)))))
 
+; interpret function that specifically executes main function
 (define interpret-main
  (lambda (classname state)
   (value-func
    (state-lookup 'main
-    (class-static-functions
-     (state-lookup classname state '()))
-    '())
+                 (class-static-functions (state-lookup classname
+                                                       state
+                                                       (default-current-type)))
+                 (default-current-type))
    (default-this)
    (list 'funcall 'main)
    state
    default-throw
    classname)))
-  
-
-; all accepted parsers, in order of usage
-(define parsers
- (lambda ()
-  (list parser function-parser simple-parser)))
-  
-
-; fallback parser that tries to parse with v4 parser,
-; and falls back to v3/v2 parser in case of failure
-(define fallback-parser
- (lambda (filename)
-  (try-parsers filename (parsers))))
-
-
-; attempts to parse filename with all in parsers
-(define try-parsers
-  (lambda (filename parsers)
-    (if (null? parsers)
-      (raise 'no-valid-parser)
-      (with-handlers ([(lambda (msg) 'fine)
-                       (lambda (msg) (try-parsers filename
-                                                      (cdr parsers)))])
-        ((car parsers) filename)))))
 
 
 ;;; Value
@@ -538,6 +514,7 @@
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
 (define default-return (lambda (x) (raise 'illegal-return)))
 (define default-this (lambda () 'no-this))
+(define default-current-type (lambda () 'no-current-type))
 
 
 ;;; State Mappings
