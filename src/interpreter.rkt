@@ -949,23 +949,26 @@
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
   (lambda (name current-type iclosure state)
-    (let* ([cclosure (state-lookup current-type state current-type)]
-           [fields (class-instance-field-names cclosure)]
-           [index (get-field-index name fields cclosure state -1 current-type)])
-      (if (eq? -1 index)
-          (raise 'illegal-var-dereferencing)
-          (field-value index (instance-field-values iclosure))))))
+    (if (null? (get-box name current-type iclosure state))
+      (raise 'illegal-var-dereferencing)
+      (field-value (get-box name current-type iclosure state)))))
 
 (define field-update
- (lambda (name current-type iclosure state new-val)
+  (lambda (name current-type iclosure state new-val)
+    (if (null? (get-box name current-type iclosure state))
+      (raise 'illegal-var-assignment)
+      (begin
+       (set-box! (get-box name current-type iclosure state) new-val)
+       state))))
+
+(define get-box
+ (lambda (name current-type iclosure state)
   (let* ([cclosure (state-lookup current-type state current-type)]
          [fields (class-instance-field-names cclosure)]
          [index (get-field-index name fields cclosure state -1 current-type)])
-      (if (eq? -1 index)
-          (raise 'illegal-var-assignment)
-          (begin
-            (field-set index (instance-field-values iclosure) new-val)
-            state)))))
+   (if (eq? -1 index)
+     (null-value)
+     (list-ref (instance-field-values iclosure) index)))))
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
@@ -986,16 +989,8 @@
       (else
         (get-field-index name (cdr fields) cclosure state acc current-type)))))
 
-(define field-box
- (lambda (index instanceFields)
-  (list-ref instanceFields index)))
-
-(define field-set
- (lambda (index instanceFields new-val)
-  (set-box! (field-box index instanceFields) new-val)))
-
 (define field-value
-  (lambda (index instanceFields)
-    (if (null? (unbox (field-box index instanceFields)))
+  (lambda (fbox)
+    (if (null? (unbox fbox))
       (raise 'unset-instance-field)
-      (unbox (field-box index instanceFields)))))
+      (unbox fbox))))
