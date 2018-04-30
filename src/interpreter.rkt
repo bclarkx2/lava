@@ -133,10 +133,10 @@
           ((null? (cdr e)) (value (car e) s throw current-type))
           ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
-          ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s current-type)
+          ((symbol? 'funcall) (value-func (method-lookup (funcall-reference e s throw current-type)
                                                          (funcall-name e)
                                                          s current-type)
-                                          (eval-reference e s current-type)
+                                          (funcall-reference e s throw current-type)
                                           e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
@@ -213,10 +213,10 @@
 ;;; Method binding
 
 ; (funcall expr, state) -> instance closure
-(define eval-reference
-  (lambda (expr state current-type)
-    (state-lookup (funcall-reference-name expr) state current-type)))
-
+(define funcall-reference
+  (lambda (expr state throw current-type)
+    (eval-reference (funcall-ref expr) state throw current-type)))
+  
 ; (funcall expr) -> func name
 (define funcall-name
   (lambda (expr)
@@ -224,11 +224,27 @@
       (dot-member-part (funcall-ref expr))
       (cadr expr))))
 
-(define funcall-reference-name
-  (lambda (expr)
-    (if (list? (funcall-ref expr))
-      (dot-ref-part (funcall-ref expr))
-      'this)))
+
+(define eval-reference
+  (lambda (ref-part state throw current-type)
+    (if (list? ref-part)
+      (value ref-part state throw current-type)
+      ;;; (if (list? (dot-ref-part ref-part))
+      ;;;   ;; (dot (dot a f) g)
+      ;;;   ;; (dot (new A) f)
+      ;;;   (value ref-part)
+
+      ;;;   ;; (dot a f)
+      ;;;   (
+      ;; f
+      (state-lookup 'this state current-type))))
+
+
+;;; (define funcall-reference-name
+;;;   (lambda (expr)
+;;;     (if (list? (funcall-ref expr))
+;;;       (dot-ref-part (funcall-ref expr))
+;;;       'this)))
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
