@@ -31,7 +31,7 @@
      (state-lookup classname state '()))'())
    (default-this)
    (list 'funcall 'main)
-   (state-add-binding (default-this) (default-this) state)
+   state
    default-throw
    classname)))
   
@@ -269,8 +269,12 @@
   (lambda (closure this e s throw current-type)
    (resolve-params (state-add-layer (call-func-env closure s))
                    s
-                   (cons 'this (call-func-params closure))
-                   (cons this (actual-params e))
+                   (if (equal? (default-this) this)
+                     (call-func-params closure)
+                     (cons 'this (call-func-params closure)))
+                   (if (equal? (default-this) this)
+                     (actual-params e)
+                     (cons this (actual-params e)))
                    throw
                    current-type)))
 
@@ -504,7 +508,7 @@
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
 (define default-return (lambda (x) (raise 'illegal-return)))
-(define default-this (lambda () 'fake-this))
+(define default-this (lambda () 'no-this))
 
 
 ;;; State Mappings
