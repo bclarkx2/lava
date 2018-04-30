@@ -136,7 +136,7 @@
           ((symbol? 'funcall) (value-func (method-lookup (eval-reference e s current-type)
                                                          (funcall-name e)
                                                          s current-type)
-                                          (funcall-reference-name e)
+                                          (eval-reference e s current-type)
                                           e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
@@ -406,7 +406,7 @@
       (if (has-this? s current-type)
         (field-lookup var
                       current-type
-                      (resolve-in-state var s current-type)
+                      (resolve-in-state 'this s current-type)
                       s)
         (raise 'illegal-var-dereferencing))
       (resolve-in-state var s current-type))))
@@ -440,7 +440,7 @@
 (define resolve-in-state
   (lambda (var lis current-type)
     (cond
-      ((null? lis) (raise 'illegal-var-dereferencing))
+      ((null? lis) '())
       ((equal? lis (state-empty)) '())
       ((equal? lis (layer-empty)) '())
       ((is-state? lis)
