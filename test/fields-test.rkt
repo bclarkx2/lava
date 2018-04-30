@@ -54,10 +54,6 @@
         5
         "update-field")
 
-(assert (test-interpret-class "fields-files/chaining-functions" 'A)
-        6
-        "chaining-functions")
-
-(assert (test-interpret-class "fields-files/chaining-fields" 'A)
-        4
-        "chaining-fields")
+(assert (test-interpret-class "fields-files/instance-field-side-effect" 'A)
+        1
+        "instance-field-side-effect")

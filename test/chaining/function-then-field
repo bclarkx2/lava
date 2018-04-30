@@ -1,0 +1,13 @@
+class A {
+    var y = 7;
+    function make_b () {
+        return new B();
+    }
+    static function main () {
+        var a = new A();
+        return a.make_b().y;
+    }
+}
+class B {
+    var y = 2;
+}

@@ -1,0 +1,17 @@
+class A {
+    function f () {
+        return 6;
+    }
+}
+class B {
+    function f () {
+        return 7;
+    }
+    function mult () {
+        return f() * super.f();
+    }
+    static function main () {
+        var b = new B();
+        return b.mult();
+    }
+}

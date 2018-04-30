@@ -1,0 +1,12 @@
+class A {
+    function makeobject () {
+        return new A();
+    }
+    function something() {
+        return 6;
+    }
+    static function main () {
+        var a = new A();
+        return a.makeobject().something();
+    }
+}

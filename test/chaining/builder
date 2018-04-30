@@ -1,0 +1,22 @@
+class A {
+    var x = 0;
+    function inc () {
+        x = x + 1;
+        return this;
+    }
+    function double() {
+        x = 2 * x;
+        return this;
+    }
+    function triple() {
+        x = 3 * x;
+        return this;
+    }
+    function val() {
+        return x;
+    }
+    static function main(){
+        var a = new A();
+        return a.inc().double().triple().value();
+    }
+}
