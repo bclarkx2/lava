@@ -20,8 +20,8 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename classname)
-    (interpret-main classname (class-global-first-pass (fallback-parser filename)
-                                                       (state-empty)))))
+    (interpret-main classname (state-classes (fallback-parser filename)
+                                             (state-empty)))))
 
 (define interpret-main
  (lambda (classname state)
@@ -105,7 +105,8 @@
                                                             expr
                                                             s
                                                             throw
-                                                            current-type))
+                                                            current-type)
+                                      current-type)
            default-brk
            default-cont
            return
@@ -541,44 +542,54 @@
 
 ;;; State Mappings
 
-(define state-class-vars
-  (lambda (stmt-list s current-type)
-    (cond
-      ((null? stmt-list) s)
-      ((not (list? stmt-list)) s)
-  
-      ; may be a list of statements
-      ((list? (keyword stmt-list))
-        (state-class-vars (cdr stmt-list)
-                          (state-class-vars (car stmt-list)
-                                            s
-                                            current-type)
-                          current-type))
+(define state-stmt-list
+ (lambda (stmt-list s current-type otherwise)
+  (cond
+   ((null? stmt-list) s)
+   ((not (list? stmt-list)) s)
+   
+   ((list? (keyword stmt-list))
+    (state-stmt-list (cdr stmt-list)
+                     (state-stmt-list (car stmt-list)
+                                      s
+                                      current-type
+                                      otherwise)
+                     current-type
+                     otherwise))
 
-      ((eq? (keyword stmt-list) 'var)
-       (state-var stmt-list
-                  s
-                  default-brk
-                  default-cont
-                  default-return
-                  default-throw
-                  current-type))
-      
-      (else s))))
+   (else (otherwise stmt-list s current-type)))))
+  
+
+(define state-classes
+ (lambda (stmt-list s)
+  (state-stmt-list stmt-list s '()
+   (lambda (stmt-list s current-type)
+    (if (eq? (keyword stmt-list) 'class)
+      (state-class stmt-list s
+                   default-brk default-cont
+                   default-return default-throw)
+      s)))))
+
+(define state-class-vars
+ (lambda (stmt-list s current-type)
+  (state-stmt-list stmt-list s current-type
+   (lambda (stmt-list s current-type)
+    (if (eq? (keyword stmt-list) 'var)
+     (state-var stmt-list s
+                default-brk
+                default-cont
+                default-return
+                default-throw
+                current-type)
+     s)))))
 
 (define state-function-first-pass
-  (lambda (stmt-list s)
-    (cond
-      ((null? stmt-list) s)
-      ((not (list? stmt-list)) s)
-
-      ((list? (keyword stmt-list))
-       (state-function-first-pass (cdr stmt-list)
-                                  (state-function-first-pass (car stmt-list)
-                                                              s)))
-
-      ((eq? (keyword stmt-list) 'function) (state-function-declaration stmt-list s))
-      (else s))))
+ (lambda (stmt-list s current-type)
+  (state-stmt-list stmt-list s current-type
+   (lambda (stmt-list s current-type)
+    (if (eq? (keyword stmt-list) 'function)
+     (state-function-declaration stmt-list s current-type)
+     s)))))
 
 (define state
   (lambda (stmt s brk cont return throw current-type)
@@ -861,22 +872,6 @@
 
 
 ;; Class definition
-
-(define class-global-first-pass
-  (lambda (stmt-list s)
-    (cond
-      ((null? stmt-list) s)
-      ((not (list? stmt-list)) s)
-
-      ((list? (keyword stmt-list))
-       (class-global-first-pass (cdr stmt-list)
-                                (class-global-first-pass (car stmt-list)
-                                                         s)))
-
-      ((eq? (keyword stmt-list) 'class)
-       (state-class stmt-list s default-brk default-cont default-return default-throw))
-
-      (else s))))
 
 (define state-class
   (lambda (stmt s brk cont return throw)
