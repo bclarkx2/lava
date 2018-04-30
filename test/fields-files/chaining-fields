@@ -1,0 +1,10 @@
+class A {
+    var b = new B();
+    static function main () {
+        var a = new A();
+        return a.b.y;
+    }
+}
+class B {
+    var y = 4;
+}

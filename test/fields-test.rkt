@@ -43,3 +43,7 @@
 (assert (test-interpret-class "fields-files/explicit-this" 'A) 5)
 
 (assert (test-interpret-class "fields-files/update-field" 'A) 5)
+
+(assert (test-interpret-class "fields-files/chaining-functions" 'A) 6)
+
+(assert (test-interpret-class "fields-files/chaining-fields" 'A) 4)

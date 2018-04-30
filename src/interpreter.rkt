@@ -113,11 +113,10 @@
 
 
 (define value-dot
-  (lambda (expr state current-type)
+  (lambda (expr state throw current-type)
     (field-lookup (dot-member-part expr)
                   current-type
-                  (state-lookup (dot-ref-part expr)
-                                state current-type)
+                  (eval-reference expr state throw current-type)
                   state)))
 
 (define value-new
@@ -140,7 +139,7 @@
                                           e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
-          ((symbol? 'dot) (value-dot e s current-type))
+          ((symbol? 'dot) (value-dot e s throw current-type))
           (else e))
         (cond
           ((number? e) e)
@@ -224,27 +223,11 @@
       (dot-member-part (funcall-ref expr))
       (cadr expr))))
 
-
 (define eval-reference
   (lambda (ref-part state throw current-type)
     (if (list? ref-part)
-        (value (dot-ref-part ref-part) state throw current-type)
-            ;;; (if (list? (dot-ref-part ref-part))
-            ;;;   ;; (dot (dot a f) g)
-            ;;;   ;; (dot (new A) f)
-            ;;;   (value ref-part)
-
-            ;;;   ;; (dot a f)
-            ;;;   (
-            ;; f
+      (value (dot-ref-part ref-part) state throw current-type)
       (state-lookup 'this state current-type))))
-
-
-;;; (define funcall-reference-name
-;;;   (lambda (expr)
-;;;     (if (list? (funcall-ref expr))
-;;;       (dot-ref-part (funcall-ref expr))
-;;;       'this)))
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
