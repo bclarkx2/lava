@@ -272,14 +272,16 @@
   (lambda (closure this e s throw current-type)
    (resolve-params (state-add-layer (call-func-env closure s))
                    s
-                   (if (equal? (default-this) this)
-                     (call-func-params closure)
-                     (cons 'this (call-func-params closure)))
-                   (if (equal? (default-this) this)
-                     (actual-params e)
-                     (cons this (actual-params e)))
+                   (resolve-this this 'this (call-func-params closure))
+                   (resolve-this this this (actual-params e))
                    throw
                    current-type)))
+
+(define resolve-this
+  (lambda (this this-val lis)
+    (if (is-default-this? this)
+      lis
+      (cons this-val lis))))
 
 (define resolve-params
   (lambda (func-env cur-state formal actual throw current-type)
@@ -519,6 +521,7 @@
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
 (define default-return (lambda (x) (raise 'illegal-return)))
 (define default-this (lambda () 'no-this))
+(define is-default-this? (lambda (x) (equal? x (default-this))))
 (define default-current-type (lambda () 'no-current-type))
 
 
