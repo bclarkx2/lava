@@ -228,11 +228,7 @@
 (define eval-reference
   (lambda (ref-part state throw current-type)
     (if (list? ref-part)
-        (if (list? (dot-ref-part ref-part))
-            (if (eq? (keyword (dot-ref-part ref-part)) 'dot)
-                (value (keyword (dot-ref-part ref-part)) state throw current-type)
-                (value (dot-ref-part ref-part) state throw current-type))
-        (value (dot-ref-part ref-part) state throw current-type))
+        (value (dot-ref-part ref-part) state throw current-type)
             ;;; (if (list? (dot-ref-part ref-part))
             ;;;   ;; (dot (dot a f) g)
             ;;;   ;; (dot (new A) f)
