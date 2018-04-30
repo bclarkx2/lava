@@ -922,7 +922,7 @@
    (lambda (state)
     (instance-closure classname
      (top-layer-values (state-class-vars body
-                                         (state-empty)
+                                         state
                                          classname)))))))
   
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
