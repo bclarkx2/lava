@@ -100,13 +100,13 @@
   (call/cc (lambda (return)
    (state-remove-layer
     (state (call-func-def closure)
-           (state-function-first-pass (call-func-def closure)
-                                      (new-func-env closure this
-                                                            expr
-                                                            s
-                                                            throw
-                                                            current-type)
-                                      current-type)
+           (state-instance-functions (call-func-def closure)
+                                     (new-func-env closure this
+                                                           expr
+                                                           s
+                                                           throw
+                                                           current-type)
+                                     current-type)
            default-brk
            default-cont
            return
@@ -583,11 +583,19 @@
                 current-type)
      s)))))
 
-(define state-function-first-pass
+(define state-instance-functions
  (lambda (stmt-list s current-type)
+  (state-function-first-pass stmt-list s current-type 'function)))
+
+(define state-static-functions
+ (lambda (stmt-list s current-type)
+  (state-function-first-pass stmt-list s current-type 'static-function)))
+
+(define state-function-first-pass
+ (lambda (stmt-list s current-type signifier)
   (state-stmt-list stmt-list s current-type
    (lambda (stmt-list s current-type)
-    (if (eq? (keyword stmt-list) 'function)
+    (if (eq? (keyword stmt-list) signifier)
      (state-function-declaration stmt-list s current-type)
      s)))))
 
@@ -876,16 +884,20 @@
 (define state-class
   (lambda (stmt s brk cont return throw)
     (state-add-binding (class-name stmt)
-                       (class-closure (parent-class-name stmt)
-                                      (instance-field-names (body stmt))
-                                      (static-functions (body stmt)
-                                                        (class-name stmt))
-                                      (instance-functions (body stmt)
-                                                          (class-name stmt))
-                                      (constructors (body stmt)
-                                                    s
-                                                    (class-name stmt)
-                                                    (parent-class-name stmt)))
+                       (class-closure 
+                         (parent-class-name stmt)
+                         (instance-field-names (body stmt)
+                                               (class-name stmt))
+                         (state-static-functions (body stmt)
+                                                 (state-empty)
+                                                 (class-name stmt))
+                         (state-instance-functions (body stmt)
+                                                   (state-empty)
+                                                   (class-name stmt))
+                         (constructors (body stmt)
+                                       s
+                                       (class-name stmt)
+                                       (parent-class-name stmt)))
                        s)))
 
 (define class-name (lambda (stmt) (cadr stmt)))
@@ -898,47 +910,10 @@
 (define body (lambda (stmt) (cadddr stmt)))  
 
 (define instance-field-names
-  (lambda (body)
-    (if (null? body)
-      body
-      (let* ([stmt (car body)]
-             [key (keyword stmt)])
-        (if (eq? key 'var)
-          (append (instance-field-names (cdr body))
-                  (list (varname stmt)))
-          (instance-field-names (cdr body)))))))
-
-(define static-functions
-  (lambda (body current-type)
-    (get-functions body
-                   (state-empty)
-                   'static-function
-                   current-type)))
-
-(define instance-functions
-  (lambda (body current-type)
-    (get-functions body
-                   (state-empty)
-                   'function
-                   current-type)))
-
-(define get-functions
-  (lambda (body state signifier current-type)
-    (if (null? body)
-      state  
-      (let* ([stmt (car body)]
-             [key (keyword stmt)])
-        (if (eq? key signifier)
-          (state-function-declaration stmt
-                                      (get-functions (cdr body)
-                                                     state
-                                                     signifier
-                                                     current-type)
-                                      current-type)
-          (get-functions (cdr body)
-                         state
-                         signifier
-                         current-type))))))
+  (lambda (body classname)
+    (top-layer-variables (state-class-vars body
+                                           (state-empty)
+                                           classname))))
 
 (define constructors
  (lambda (body define-state classname parentname)
