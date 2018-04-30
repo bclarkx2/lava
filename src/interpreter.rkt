@@ -951,12 +951,12 @@
    (lambda (state)
     (instance-closure
      classname
-     (append (parent-class-init-fields state classname parentname)
-             (this-class-init-fields body
-                                     (starting-state define-state state)
-                                     classname)))))))
+     (append (parent-init-fields state classname parentname)
+             (this-init-fields body
+                               (starting-state define-state state)
+                               classname)))))))
 
-(define parent-class-init-fields
+(define parent-init-fields
  (lambda (state classname parentname)
   (if (null? parentname)
    '()
@@ -970,7 +970,7 @@
   (state-add-layer
    ((mk-environment-func define-state) instantiate-state))))
 
-(define this-class-init-fields
+(define this-init-fields
   (lambda (body start-state classname)
     (reverse (top-layer-values (state-class-vars body
                                                  start-state
