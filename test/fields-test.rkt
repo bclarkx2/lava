@@ -57,3 +57,7 @@
 (assert (test-interpret-class "fields-files/instance-field-side-effect" 'A)
         1
         "instance-field-side-effect")
+
+(assert (test-interpret-class "fields-files/cascading-fields" 'A)
+        2
+        "cascading-fields")

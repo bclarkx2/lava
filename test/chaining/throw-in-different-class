@@ -1,0 +1,21 @@
+class A {
+    function af () {
+        try {
+            var b = new B();
+            b.trouble();
+            return 2;
+        }
+        catch(e){
+            return e;
+        }
+    }
+    static function main() {
+        var a = new A();
+        return a.af();
+    }
+}
+class B {
+    function trouble() {
+        throw 3;
+    }
+}

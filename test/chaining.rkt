@@ -30,3 +30,7 @@
 (assert (test-interpret-class "chaining/builder" 'A)
         6
         "builder")
+
+(assert (test-interpret-class "chaining/throw-in-different-class" 'A)
+        3
+        "throw-in-different-class")
