@@ -196,22 +196,28 @@
 ; (funcall expr) -> func name
 (define funcall-name
   (lambda (expr)
-    (if (list? (funcall-ref expr))
-      (dot-member-part (funcall-ref expr))
-      (cadr expr))))
+    (if (has-implicit-this? (funcall-ref expr))
+      (cadr expr)
+      (dot-member-part (funcall-ref expr)))))
 
-;; (funcall f) -> this
-;; (funcall (dot a f)) -> a
-;; (funcall (dot (dot a f) g)) -> a.f
-;; (funcall (dot (new A) f)) -> (new A)
-
+; (ref expr) -> instance closure
 (define eval-reference
   (lambda (ref-part state throw current-type)
-    (if (list? ref-part)
-      (if (list? (dot-ref-part ref-part))
-        (value (dot-ref-part ref-part) state throw current-type)
-        (state-lookup (dot-ref-part ref-part) state current-type))
-      (state-lookup 'this state current-type))))
+    (cond 
+      ((has-implicit-this? ref-part)
+        (state-lookup 'this state current-type))
+      ((another-reference-layer? ref-part)
+        (value (dot-ref-part ref-part) state throw current-type))
+      (else
+        (state-lookup (dot-ref-part ref-part) state current-type)))))
+
+(define has-implicit-this?
+ (lambda (ref-part)
+  (not (list? ref-part))))
+
+(define another-reference-layer?
+ (lambda (ref-part)
+  (list? (dot-ref-part ref-part))))
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
@@ -249,11 +255,10 @@
           def
           env-func
           class-func)
-  (list
-   params
-   def
-   env-func
-   class-func)))
+  (list params
+        def
+        env-func
+        class-func)))
 
 (define call-func-params (lambda (closure) (car closure)))
 (define call-func-def (lambda (closure) (cadr closure)))
