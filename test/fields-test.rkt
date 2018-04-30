@@ -34,16 +34,30 @@
                             'A
                             'illegal-var-dereferencing)
 
-(assert (test-interpret-class "fields-files/second-class-field" 'A) 8)
+(assert (test-interpret-class "fields-files/second-class-field" 'A)
+        8
+        "second-class-field")
 
-(assert (test-interpret-class "fields-files/local-not-shadows" 'A) 2)
+(assert (test-interpret-class "fields-files/local-not-shadows" 'A)
+        2
+        "local-not-shadows")
 
-(assert (test-interpret-class "fields-files/local-shadows-instance-field" 'A) 2)
+(assert (test-interpret-class "fields-files/local-shadows-instance-field" 'A)
+        2
+        "local-shadows-instance-field")
 
-(assert (test-interpret-class "fields-files/explicit-this" 'A) 5)
+(assert (test-interpret-class "fields-files/explicit-this" 'A)
+        5
+        "explicit-this")
 
-(assert (test-interpret-class "fields-files/update-field" 'A) 5)
+(assert (test-interpret-class "fields-files/update-field" 'A)
+        5
+        "update-field")
 
-(assert (test-interpret-class "fields-files/chaining-functions" 'A) 6)
+(assert (test-interpret-class "fields-files/chaining-functions" 'A)
+        6
+        "chaining-functions")
 
-(assert (test-interpret-class "fields-files/chaining-fields" 'A) 4)
+(assert (test-interpret-class "fields-files/chaining-fields" 'A)
+        4
+        "chaining-fields")

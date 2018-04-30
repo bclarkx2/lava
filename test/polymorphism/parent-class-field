@@ -1,0 +1,12 @@
+class A {
+    var ax = 1;
+    var ay = 2;
+}
+class B extends A {
+    var bx = 3;
+    var by = 4;
+    static function main () {
+        var b = new B();
+        return b.ax;
+    }
+}

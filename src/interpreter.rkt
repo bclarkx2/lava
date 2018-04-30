@@ -122,8 +122,7 @@
 
 (define value-new
   (lambda (expr s current-type)
-    ((default-constructor (state-lookup (true-type expr) s current-type))
-     s)))
+    (default-instance (state-lookup (true-type expr) s current-type) s)))
 
 (define value
   (lambda (e s throw current-type)
@@ -224,10 +223,17 @@
       (dot-member-part (funcall-ref expr))
       (cadr expr))))
 
+;; (funcall f) -> this
+;; (funcall (dot a f)) -> a
+;; (funcall (dot (dot a f) g)) -> a.f
+;; (funcall (dot (new A) f)) -> (new A)
+
 (define eval-reference
   (lambda (ref-part state throw current-type)
     (if (list? ref-part)
-      (value (dot-ref-part ref-part) state throw current-type)
+      (if (list? (dot-ref-part ref-part))
+        (value (dot-ref-part ref-part) state throw current-type)
+        (state-lookup (dot-ref-part ref-part) state current-type))
       (state-lookup 'this state current-type))))
 
 ; (instance closure, function name, state) -> function closure
@@ -372,6 +378,10 @@
 (define default-constructor
  (lambda (closure)
   (car (class-constructors closure))))
+
+(define default-instance
+ (lambda (closure state)
+  ((default-constructor closure) state)))
 
 ;; Instance closures
 
@@ -878,7 +888,9 @@
                                       (instance-functions (body stmt)
                                                           (class-name stmt))
                                       (constructors (body stmt)
-                                                    (class-name stmt)))
+                                                    s
+                                                    (class-name stmt)
+                                                    (parent-class-name stmt)))
                        s)))
 
 (define class-name (lambda (stmt) (cadr stmt)))
@@ -897,7 +909,8 @@
       (let* ([stmt (car body)]
              [key (keyword stmt)])
         (if (eq? key 'var)
-          (cons (varname stmt) (instance-field-names (cdr body)))
+          (append (instance-field-names (cdr body))
+                  (list (varname stmt)))
           (instance-field-names (cdr body)))))))
 
 (define static-functions
@@ -933,20 +946,38 @@
                          current-type))))))
 
 (define constructors
- (lambda (body classname)
+ (lambda (body define-state classname parentname)
   (list
    (lambda (state)
-    (instance-closure classname
-     (top-layer-values (state-class-vars body
-                                         state
-                                         classname)))))))
-  
+    (if (null? parentname)
+      (instance-closure
+        classname
+        (this-class-init-fields body
+                                ((mk-environment-func define-state) state)
+                                classname))
+      (instance-closure
+        classname
+        (append (instance-field-values
+                  (default-instance (state-lookup parentname
+                                    state
+                                    classname)
+                  state))
+                (this-class-init-fields body
+                                        ((mk-environment-func define-state) state)
+                                        classname))))))))
+
+(define this-class-init-fields
+  (lambda (body start-state classname)
+    (reverse (top-layer-values (state-class-vars body
+                                                 (state-add-layer start-state)
+                                                 classname)))))
+
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
   (lambda (name current-type iclosure state)
     (let* ([cclosure (state-lookup current-type state current-type)]
            [fields (class-instance-field-names cclosure)]
-           [index (get-field-index name fields cclosure -1 current-type)])
+           [index (get-field-index name fields cclosure state -1 current-type)])
       (if (eq? -1 index)
           (raise 'illegal-var-dereferencing)
           (field-value index (instance-field-values iclosure))))))
@@ -955,7 +986,7 @@
  (lambda (name current-type iclosure state new-val)
   (let* ([cclosure (state-lookup current-type state current-type)]
          [fields (class-instance-field-names cclosure)]
-         [index (get-field-index name fields cclosure -1 current-type)])
+         [index (get-field-index name fields cclosure state -1 current-type)])
       (if (eq? -1 index)
           (raise 'illegal-var-assignment)
           (begin
@@ -964,7 +995,7 @@
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
-  (lambda (name fields cclosure acc current-type)
+  (lambda (name fields cclosure state acc current-type)
     (cond
       ((and (null? fields)
             (null? (class-parent-name cclosure)))
@@ -973,12 +1004,13 @@
         (get-field-index name
                          (class-instance-field-names (class-parent cclosure state current-type))
                          (class-parent cclosure state current-type)
+                         state
                          acc current-type))
       ((or (>= acc 0)
            (eq? name (car fields)))
-        (get-field-index name (cdr fields) cclosure (+ acc 1) current-type))
+        (get-field-index name (cdr fields) cclosure state (+ acc 1) current-type))
       (else
-        (get-field-index name (cdr fields) cclosure acc current-type)))))
+        (get-field-index name (cdr fields) cclosure state acc current-type)))))
 
 (define field-box
  (lambda (index instanceFields)
