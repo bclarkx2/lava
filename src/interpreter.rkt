@@ -949,27 +949,31 @@
  (lambda (body define-state classname parentname)
   (list
    (lambda (state)
-    (if (null? parentname)
-      (instance-closure
-        classname
-        (this-class-init-fields body
-                                ((mk-environment-func define-state) state)
-                                classname))
-      (instance-closure
-        classname
-        (append (instance-field-values
-                  (default-instance (state-lookup parentname
-                                    state
-                                    classname)
-                  state))
-                (this-class-init-fields body
-                                        ((mk-environment-func define-state) state)
-                                        classname))))))))
+    (instance-closure
+     classname
+     (append (parent-class-init-fields state classname parentname)
+             (this-class-init-fields body
+                                     (starting-state define-state state)
+                                     classname)))))))
+
+(define parent-class-init-fields
+ (lambda (state classname parentname)
+  (if (null? parentname)
+   '()
+   (instance-field-values (default-instance (state-lookup parentname
+                                                          state
+                                                          classname)
+                                            state)))))
+
+(define starting-state
+ (lambda (define-state instantiate-state)
+  (state-add-layer
+   ((mk-environment-func define-state) instantiate-state))))
 
 (define this-class-init-fields
   (lambda (body start-state classname)
     (reverse (top-layer-values (state-class-vars body
-                                                 (state-add-layer start-state)
+                                                 start-state
                                                  classname)))))
 
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
