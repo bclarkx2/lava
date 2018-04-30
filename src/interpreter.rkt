@@ -509,7 +509,7 @@
 
 ;;; State Mappings
 
-(define state-global-first-pass
+(define state-class-vars
   (lambda (stmt-list s current-type)
     (cond
       ((null? stmt-list) s)
@@ -517,15 +517,12 @@
   
       ; may be a list of statements
       ((list? (keyword stmt-list))
-        (state-global-first-pass (cdr stmt-list)
-                                 (state-global-first-pass (car stmt-list)
-                                                          s
-                                                          current-type)
-                                 current-type))
+        (state-class-vars (cdr stmt-list)
+                          (state-class-vars (car stmt-list)
+                                            s
+                                            current-type)
+                          current-type))
 
-      ; remaining operations delegated to helpers
-      ((eq? (keyword stmt-list) 'function)
-       (state-function-declaration stmt-list s current-type)) 
       ((eq? (keyword stmt-list) 'var)
        (state-var stmt-list
                   s
@@ -907,9 +904,9 @@
   (list
    (lambda (state)
     (instance-closure classname
-     (top-layer-values(state-global-first-pass body
-                                               (state-empty)
-                                               classname)))))))
+     (top-layer-values (state-class-vars body
+                                         (state-empty)
+                                         classname)))))))
   
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
