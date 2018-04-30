@@ -1,5 +1,0 @@
-var x;
-var y;
-y = 3;
-x = 4;
-return x;
