@@ -1,0 +1,14 @@
+class A {
+    function parentf () {
+        return 11;
+    }
+}
+class B extends A {
+    function childf () {
+        return 8;
+    }
+    static function main () {
+        var b = new B();
+        return b.parentf();
+    }
+}

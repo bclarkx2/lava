@@ -28,7 +28,8 @@
   (value-func
    (state-lookup 'main
     (class-static-functions
-     (state-lookup classname state '()))'())
+     (state-lookup classname state '()))
+    '())
    (default-this)
    (list 'funcall 'main)
    state
@@ -231,9 +232,24 @@
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
- (lambda (iclosure fname state current-type)
-  (state-lookup fname
-                (class-instance-functions (instance-true-type iclosure state current-type)) current-type)))
+  (lambda (iclosure fname state current-type)
+    (state-lookup fname
+                  (method-hierarchy (instance-true-type iclosure state current-type)
+                                    state
+                                    current-type)
+                  current-type)))
+
+(define method-hierarchy
+  (lambda (cclosure state current-type)
+    (if (null? (class-parent-name cclosure))
+      (top-layer (class-instance-functions cclosure))
+      (cons (top-layer (class-instance-functions cclosure))
+            (method-hierarchy (class-parent cclosure
+                                            state
+                                            current-type)
+                              state
+                              current-type)))))
+  
 
 (define funcall-ref (lambda (funcall-expr) (cadr funcall-expr)))
 
@@ -334,7 +350,7 @@
 
 (define class-parent
  (lambda (closure state current-type)
-  (state-lookup (class-parent-name)
+  (state-lookup (class-parent-name closure)
                 state current-type)))
 
 (define class-instance-field-names

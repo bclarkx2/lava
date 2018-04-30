@@ -15,7 +15,7 @@
 (assert 36 (test-interpret-class "int4-files/4" 'A) "Test 4")
 (assert 54 (test-interpret-class "int4-files/5" 'A) "Test 5")
 (assert 110 (test-interpret-class "int4-files/6" 'A) "Test 6")
-;;; (assert 26 (test-interpret-class "int4-files/7" 'C))
+(assert 26 (test-interpret-class "int4-files/7" 'C) "Test 7")
 ;;; (assert 117 (test-interpret-class "int4-files/8" 'Square))
 ;;; (assert 32 (test-interpret-class "int4-files/9" 'Square))
 ;;; (assert 15 (test-interpret-class "int4-files/10" 'List))
