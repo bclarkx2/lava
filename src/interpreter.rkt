@@ -427,9 +427,6 @@
 (define is-declared
   (lambda (var lis)
     (cond
-      ;;; (with-handlers ([(lambda (err) #f)
-      ;;;                  (lambda (result) #t)])
-      ;;;   (state-lookup var lis current-type)))))
       ((null? lis) #f)
       ((equal? lis (layer-empty)) #f)
       ((is-state? lis) (or (is-declared var (top-layer lis))
@@ -456,9 +453,9 @@
 (define resolve-in-state
   (lambda (var lis current-type)
     (cond
-      ((null? lis) '())
-      ((equal? lis (state-empty)) '())
-      ((equal? lis (layer-empty)) '())
+      ((null? lis) (null-value))
+      ((equal? lis (state-empty)) (null-value))
+      ((equal? lis (layer-empty)) (null-value))
       ((is-state? lis)
        (if (null? (resolve-in-state var (top-layer lis) current-type))
            (resolve-in-state var (state-remaining lis) current-type)
