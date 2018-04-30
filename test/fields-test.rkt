@@ -30,11 +30,13 @@
         13
         "implicit-field")
 
-;;; (assert-interpret-class-err "fields-files/implicit-in-main"
-;;;                             'A
-;;;                             'illegal-var-dereferencing)
+(assert-interpret-class-err "fields-files/implicit-in-main"
+                            'A
+                            'illegal-var-dereferencing)
 
-;;; (assert 8 (test-interpret-class "fields-files/second-class-field" 'A))
+(assert (test-interpret-class "fields-files/second-class-field" 'A) 8)
 
-;;; (assert 2 (test-interpret-class "fields-files/local-shadows-instance-field" 'A))
+(assert (test-interpret-class "fields-files/local-not-shadows" 'A) 2)
+
+(assert (test-interpret-class "fields-files/local-shadows-instance-field" 'A) 2)
 

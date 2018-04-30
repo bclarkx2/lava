@@ -1,8 +1,8 @@
 class A {
     var x = 4;
     function f () {
-        var x = 2;
-        return x;
+        var y = 2;
+        return y;
     }
     static function main () {
         var a = new A();
