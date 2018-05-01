@@ -1,11 +1,7 @@
-class A {
-    var b = new B();
-    function get_b(){
-        return b;
-    }
-    static function main () {
-        var a = new A();
-        return a.get_b().make_c().get_val();
+class C {
+    var me = true;
+    function get_val () {
+        return me;
     }
 }
 class B {
@@ -13,9 +9,13 @@ class B {
         return new C();
     }
 }
-class C {
-    var me = true;
-    function get_val () {
-        return me;
+class A {
+    var b = new B();
+    function get_b(){
+        return b;
+    }
+    static function main () {
+        var a = new A();
+        return 2;
     }
 }
