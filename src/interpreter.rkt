@@ -701,7 +701,7 @@
                         s
                         (value (varexpr stmt) s throw current-type))
       (if (null? (resolve-in-state (varname stmt) s current-type))
-          (field-update (dot-member-part (varname stmt))
+          (field-update (varname stmt)
                         current-type
                         (state-lookup 'this s current-type)
                         s
