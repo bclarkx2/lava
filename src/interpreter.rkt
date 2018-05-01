@@ -908,6 +908,7 @@
                        (class-closure 
                          (parent-class-name stmt)
                          (instance-field-names (body stmt)
+                                               (state-add-layer s)
                                                (class-name stmt))
                          (state-static-functions (body stmt)
                                                  (state-empty)
@@ -931,9 +932,9 @@
 (define body (lambda (stmt) (cadddr stmt)))  
 
 (define instance-field-names
-  (lambda (body classname)
+  (lambda (body start-state classname)
     (top-layer-variables (state-class-vars body
-                                           (state-empty)
+                                           start-state
                                            classname))))
 
 (define constructors
