@@ -18,8 +18,8 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename classname)
-    (interpret-main classname (state-classes (parser filename)
-                                             (state-empty)))))
+    (handle-print (interpret-main classname (state-classes (parser filename)
+                                                           (state-empty))))))
 
 ; interpret function that specifically executes main function
 (define interpret-main
@@ -36,6 +36,12 @@
    default-throw
    classname)))
 
+(define handle-print
+  (lambda (val)
+    (cond 
+      ((eq? val #t) 'true)
+      ((eq? val #f) 'false)
+      (else val))))
 
 ;;; Value
  
@@ -628,7 +634,7 @@
       ; null and return statements do not alter state
       ((null? stmt) s)
       ((not (list? stmt)) s)
-      ((eq? (keyword stmt) 'return) (handle-return stmt s return throw current-type))
+      ((eq? (keyword stmt) 'return) (return (value (cdr stmt) s throw current-type)))
 
       ; may be a list of statements
       ((list? (keyword stmt)) (state-list stmt s brk cont return throw current-type))
@@ -670,13 +676,6 @@
 (define handle-throw
  (lambda (stmt s throw current-type)
   (throw s (value (cdr stmt) s throw current-type))))
-
-(define handle-return
-  (lambda (stmt s return throw current-type)
-    (cond 
-      ((eq? (value (cdr stmt) s throw current-type) #t) (return 'true))
-      ((eq? (value (cdr stmt) s throw current-type) #f) (return 'false))
-      (else (return (value (cdr stmt) s throw current-type))))))
 
 
 ;; Statement list
