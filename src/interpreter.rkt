@@ -688,7 +688,6 @@
 
 
 ;; Assignment
-
 (define state-assign
   (lambda (stmt s brk cont return throw current-type)
     (if (list? (varname stmt))
@@ -699,16 +698,16 @@
                                       current-type)
                         s
                         (value (varexpr stmt) s throw current-type))
-      (if (null? (resolve-in-state (varname stmt) s current-type))
+      (if (is-declared (varname stmt) s)
+          (state-set-binding
+           (varname stmt)
+           (value (varexpr stmt) s throw current-type)
+           s)
           (field-update (varname stmt)
                         current-type
                         (state-lookup 'this s current-type)
                         s
-                        (value (varexpr stmt) s throw current-type))
-          (state-set-binding
-           (varname stmt)
-           (value (varexpr stmt) s throw current-type)
-           s)))))
+                        (value (varexpr stmt) s throw current-type))))))
 
 (define varname
   (lambda (stmt) (cadr stmt)))
@@ -800,19 +799,19 @@
 ;; Try
 
 (define state-try
- (lambda (stmt s brk cont return throw current-type)
+  (lambda (stmt s brk cont return throw current-type)
     (state (finally stmt)
            (call/cc (lambda (try-state)
-            (state (try stmt)
-                   s
-                   (break-that-does-finally stmt brk cont return throw current-type) cont return
-                    (throw-that-does-catch stmt
-                                           try-state
-                                           (break-that-does-finally stmt brk cont return throw)
-                                           cont
-                                           return
-                                           throw
-                                           current-type))))
+                      (state (try stmt)
+                             s
+                             (break-that-does-finally stmt brk cont return throw current-type) cont return
+                             (throw-that-does-catch stmt
+                                                    try-state
+                                                    (break-that-does-finally stmt brk cont return throw current-type)
+                                                    cont
+                                                    return
+                                                    throw
+                                                    current-type) current-type)))
            brk cont return throw current-type)))
 
 (define break-that-does-finally
