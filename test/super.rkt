@@ -11,11 +11,11 @@
 
 ;;; test cases
 
-(assert (test-interpret-class "super/basic-super" 'A)
+(assert (test-interpret-class "super/basic-super" 'B)
         6
         "basic-super")
 
-(assert (test-interpret-class "super/super-with-override" 'A)
+(assert (test-interpret-class "super/super-with-override" 'B)
         42
         "super-with-override")
 
