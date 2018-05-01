@@ -663,7 +663,7 @@
            (state (varexpr stmt)
                   (state (varname stmt)
                          s brk cont return throw current-type)
-                  brk cont return throw)))
+                  brk cont return throw current-type)))
       
       (else s))))
 
@@ -791,7 +791,8 @@
           (lambda (v) (cont (state-remove-layer v)))
           return 
           (lambda (state val)
-           (throw (state-remove-layer state) val))))))
+           (throw (state-remove-layer state) val))
+          current-type))))
 
 (define block-contents (lambda (stmt) (cdr stmt)))
 
