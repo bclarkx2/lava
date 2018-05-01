@@ -109,7 +109,7 @@
           ((null? (cdr e)) (value (car e) s throw current-type))
           ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
-          ((symbol? 'funcall) (value-func (method-lookup (funcall-reference e s throw current-type)
+          ((symbol? 'funcall) (value-func (method-lookup (funcall-methods e s throw current-type)
                                                          (funcall-name e)
                                                          s current-type)
                                           (funcall-reference e s throw current-type)
@@ -188,6 +188,55 @@
 
 ;;; Method binding
 
+(define funcall-methods
+ (lambda (expr state throw current-type)
+  (eval-methods (funcall-ref expr) state throw current-type)))
+
+(define eval-methods
+  (lambda (ref-part state throw current-type)
+    (cond 
+      ((has-implicit-this? ref-part)
+        (method-hierarchy (state-lookup 
+                           (instance-true-type
+                            (state-lookup 'this state current-type)
+                            state
+                            current-type)
+                           state
+                           current-type)
+                          state
+                          current-type))
+      ((another-reference-layer? ref-part)
+        (method-hierarchy (state-lookup 
+                           (instance-true-type
+                            (value (dot-ref-part ref-part) state throw current-type)
+                            state
+                            current-type)
+                           state
+                           current-type)
+                          state
+                          current-type))
+      ((eq? (dot-ref-part ref-part) 'super)
+        (state-remaining
+         (method-hierarchy (state-lookup 
+                            (instance-true-type
+                             (state-lookup 'this state current-type)
+                             state
+                             current-type)
+                            state
+                            current-type)
+                           state
+                           current-type)))
+      (else
+        (method-hierarchy (state-lookup 
+                           (instance-true-type
+                            (state-lookup (dot-ref-part ref-part) state current-type)
+                            state
+                            current-type)
+                           state
+                           current-type)
+                          state
+                          current-type)))))
+
 ; (funcall expr, state) -> instance closure
 (define funcall-reference
   (lambda (expr state throw current-type)
@@ -221,11 +270,12 @@
 
 ; (instance closure, function name, state) -> function closure
 (define method-lookup
-  (lambda (iclosure fname state current-type)
+  (lambda (methods fname state current-type)
     (state-lookup fname
-                  (method-hierarchy (instance-true-type iclosure state current-type)
-                                    state
-                                    current-type)
+                  methods
+                  ;;; (method-hierarchy (instance-true-type iclosure state current-type)
+                  ;;;                   state
+                  ;;;                   current-type)
                   current-type)))
 
 (define method-hierarchy
