@@ -196,46 +196,34 @@
   (lambda (ref-part state throw current-type)
     (cond 
       ((has-implicit-this? ref-part)
-        (method-hierarchy (state-lookup 
-                           (instance-true-type
-                            (state-lookup 'this state current-type)
-                            state
-                            current-type)
-                           state
-                           current-type)
+       (method-hierarchy (instance-true-type
+                          (state-lookup 'this state current-type)
                           state
-                          current-type))
+                          current-type)
+                         state
+                         current-type))
       ((another-reference-layer? ref-part)
-        (method-hierarchy (state-lookup 
-                           (instance-true-type
-                            (value (dot-ref-part ref-part) state throw current-type)
-                            state
-                            current-type)
+       (method-hierarchy  (instance-true-type
+                           (value (dot-ref-part ref-part) state throw current-type)
                            state
                            current-type)
                           state
                           current-type))
       ((eq? (dot-ref-part ref-part) 'super)
-        (state-remaining
-         (method-hierarchy (state-lookup 
-                            (instance-true-type
-                             (state-lookup 'this state current-type)
-                             state
-                             current-type)
+       (state-remaining
+        (method-hierarchy  (instance-true-type
+                            (state-lookup 'this state current-type)
                             state
                             current-type)
                            state
                            current-type)))
       (else
-        (method-hierarchy (state-lookup 
-                           (instance-true-type
-                            (state-lookup (dot-ref-part ref-part) state current-type)
-                            state
-                            current-type)
-                           state
-                           current-type)
+       (method-hierarchy (instance-true-type
+                          (state-lookup (dot-ref-part ref-part) state current-type)
                           state
-                          current-type)))))
+                          current-type)
+                         state
+                         current-type)))))
 
 ; (funcall expr, state) -> instance closure
 (define funcall-reference
