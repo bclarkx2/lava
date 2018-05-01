@@ -211,8 +211,8 @@
                           current-type))
       ((eq? (dot-ref-part ref-part) 'super)
        (state-remaining
-        (method-hierarchy  (instance-true-type
-                            (state-lookup 'this state current-type)
+        (method-hierarchy  (state-lookup
+                            current-type
                             state
                             current-type)
                            state
@@ -245,6 +245,8 @@
         (state-lookup 'this state current-type))
       ((another-reference-layer? ref-part)
         (value (dot-ref-part ref-part) state throw current-type))
+      ((eq? (dot-ref-part ref-part) 'super)
+       (state-lookup 'this state current-type))
       (else
         (state-lookup (dot-ref-part ref-part) state current-type)))))
 
