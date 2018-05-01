@@ -99,7 +99,10 @@
 (define value-dot
   (lambda (expr state throw current-type)
     (field-lookup (dot-member-part expr)
-                  current-type
+                  (if (eq? 'super (dot-ref-part expr))
+                    (class-parent-name
+                     (state-lookup current-type state current-type))
+                    current-type)
                   (eval-reference expr state throw current-type)
                   state)))
 

@@ -19,3 +19,6 @@
         42
         "super-with-override")
 
+(assert (test-interpret-class "super/super-field" 'B)
+        3
+        "super-field")
