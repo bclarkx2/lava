@@ -7,7 +7,6 @@
 (require racket/trace)
 (require racket/pretty)
 (require "../src/interpreter.rkt")
-(require "../src/functionParser.rkt")
 (require rackunit)
 
 ;;; utilities
