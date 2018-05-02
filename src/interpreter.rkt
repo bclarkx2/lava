@@ -276,9 +276,6 @@
   (lambda (methods fname state current-type)
     (state-lookup fname
                   methods
-                  ;;; (method-hierarchy (instance-true-type iclosure state current-type)
-                  ;;;                   state
-                  ;;;                   current-type)
                   current-type)))
 
 (define method-hierarchy
