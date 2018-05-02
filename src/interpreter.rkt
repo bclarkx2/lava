@@ -18,8 +18,9 @@
 ; interpret helper that raises exceptions
 (define interpret-raise
   (lambda (filename classname)
-    (handle-print (interpret-main classname (state-classes (parser filename)
-                                                           (state-empty))))))
+    (handle-print (interpret-main (string->symbol classname)
+                                  (state-classes (parser filename)
+                                                 (state-empty))))))
 
 ; interpret function that specifically executes main function
 (define interpret-main
