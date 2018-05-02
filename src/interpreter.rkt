@@ -1,7 +1,10 @@
-;;; Interpreter project
-;; Brian Clark
-;; Danny Miles
-;; Kaius Reed
+; Lava Interpreter
+;
+;; Contributors
+;
+;;; Brian Clark
+;;; Danny Miles
+;;; Kaius Reed
 
 #lang racket
 (provide (all-defined-out))
