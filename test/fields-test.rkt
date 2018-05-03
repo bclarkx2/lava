@@ -61,3 +61,7 @@
 (assert (test-interpret-class "fields-files/cascading-fields" "A")
         2
         "cascading-fields")
+
+(assert (test-interpret-class "fields-files/setter" "A")
+        4
+        "setter")

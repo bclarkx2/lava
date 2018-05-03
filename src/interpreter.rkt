@@ -95,7 +95,7 @@
                                      current-type)
            default-brk
            default-cont
-           return
+           (lambda (val s) (return val))
            (mk-safe-throw throw s)
            (function-class closure s)))))))
 
@@ -259,9 +259,22 @@
       ((another-reference-layer? ref-part)
         (value (dot-ref-part ref-part) state throw current-type))
       ((eq? (dot-ref-part ref-part) 'super)
-       (state-lookup 'this state current-type))
+        (state-lookup 'this state current-type))
       (else
         (state-lookup (dot-ref-part ref-part) state current-type)))))
+
+(define eval-reference-name
+ (lambda (ref-part state throw current-type)
+  (cond 
+   ((has-implicit-this? ref-part)
+     'this)
+   ((another-reference-layer? ref-part)
+     (null-value))
+   ((eq? (dot-ref-part ref-part) 'super)
+     'this)
+   (else
+     (dot-ref-part ref-part)))))
+  
 
 (define has-implicit-this?
  (lambda (ref-part)
@@ -448,7 +461,8 @@
 (define state-add-binding
   (lambda (var value s)
     (cons (list (cons var (top-layer-variables s))
-                (cons (box value) (top-layer-values s)))
+                (cons value (top-layer-values s)))
+                ;;; (cons (box value) (top-layer-values s)))
           (state-remaining s))))
 
 (define state-set-binding
@@ -512,7 +526,8 @@
            (resolve-in-state var (top-layer lis) current-type)))
       (else
        (if (eq? var (car (layer-variables lis)))
-           (unbox (car (layer-values lis)))
+           (car (layer-values lis))
+           ;;; (unbox (car (layer-values lis)))
            (resolve-in-state var (layer-remaining lis) current-type))))))
   
 (define has-this?
@@ -525,7 +540,9 @@
     (cond
       ((equal? layer (layer-empty)) (layer-empty))
       ((eq? var (car (layer-variables layer)))
-        (begin (set-box! (car (layer-values layer)) newValue) layer))
+        ;;; (begin (set-box! (car (layer-values layer)) newValue) layer))
+        (list (cons var (layer-variables (layer-remaining layer)))
+              (cons newValue (layer-values (layer-remaining layer)))))
       (else (list (cons (car (layer-variables layer))
                         (car (change-binding var newValue (layer-remaining layer))))
                   (cons (car (layer-values layer))
@@ -566,7 +583,7 @@
 (define default-brk (lambda (x) (raise 'illegal-break)))
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
-(define default-return (lambda (x) (raise 'illegal-return)))
+(define default-return (lambda (x y) (raise 'illegal-return)))
 (define default-this (lambda () 'no-this))
 (define is-default-this? (lambda (x) (equal? x (default-this))))
 (define default-current-type (lambda () 'no-current-type))
@@ -638,7 +655,8 @@
       ; null and return statements do not alter state
       ((null? stmt) s)
       ((not (list? stmt)) s)
-      ((eq? (keyword stmt) 'return) (return (value (cdr stmt) s throw current-type)))
+      ((eq? (keyword stmt) 'return) (return (value (cdr stmt) s throw current-type)
+                                            s))
 
       ; may be a list of statements
       ((list? (keyword stmt)) (state-list stmt s brk cont return throw current-type))
@@ -651,7 +669,13 @@
       ((eq? (keyword stmt) 'begin) (state-block stmt s brk cont return throw current-type))
       ((eq? (keyword stmt) 'try) (state-try stmt s brk cont return throw current-type))
       ((eq? (keyword stmt) 'function) s)
-      ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw current-type) s))
+      ;;; ((eq? (keyword stmt) 'funcall) (begin (value stmt s throw current-type) s))
+      ((eq? (keyword stmt) 'funcall)
+        (state-funcall (method-lookup (funcall-methods stmt s throw current-type)
+                                      (funcall-name stmt)
+                                      s current-type)
+                       (funcall-reference stmt s throw current-type)
+                       stmt s throw current-type))
       ((eq? (keyword stmt) 'new) s)
       ((eq? (keyword stmt) 'class) s)
 
@@ -697,6 +721,7 @@
     (if (list? (varname stmt))
       (field-update (dot-member-part (varname stmt))
                         current-type
+                        (dot-ref-part (varname stmt))
                         (state-lookup (dot-ref-part (varname stmt))
                                       s
                                       current-type)
@@ -709,6 +734,7 @@
            s)
           (field-update (varname stmt)
                         current-type
+                        'this
                         (state-lookup 'this s current-type)
                         s
                         (value (varexpr stmt) s throw current-type))))))
@@ -903,6 +929,47 @@
 (define func-params (lambda (exp) (caddr exp)))
 (define func-def (lambda (exp) (cadddr exp)))
 
+(define state-funcall
+ (lambda (closure this expr s throw current-type)
+  (if (not (null? (eval-reference-name (funcall-ref expr)
+                                       s
+                                       throw
+                                       current-type)))
+    (state-set-binding (eval-reference-name (funcall-ref expr)
+                                            s
+                                            throw
+                                            current-type)
+                       (state-lookup 'this
+                                     (state-raw-funcall closure 
+                                                        this
+                                                        expr s
+                                                        throw
+                                                        current-type)
+                                     current-type)
+                       s)
+    (state-remove-layer (state-raw-funcall closure
+                                           this
+                                           expr s
+                                           throw
+                                           current-type)))))
+
+(define state-raw-funcall
+ (lambda (closure this expr s throw current-type)
+   (call/cc (lambda (return)
+    (state (call-func-def closure)
+           (state-instance-functions (call-func-def closure)
+                                     (new-func-env closure
+                                                   this
+                                                   expr
+                                                   s
+                                                   throw
+                                                   current-type)
+                                     current-type)
+           default-brk
+           default-cont
+           (lambda (val s) (return s))
+           (mk-safe-throw throw s)
+           (function-class closure s))))))
 
 ;; Class definition
 
@@ -975,26 +1042,43 @@
 ;; Field functions -- fields stored so that parent class field names come before subclass field names
 (define field-lookup
   (lambda (name current-type iclosure state)
-    (if (null? (get-box name current-type iclosure state))
-      (raise 'illegal-var-dereferencing)
-      (field-value (get-box name current-type iclosure state)))))
+    ;;; (if (null? (get-box name current-type iclosure state))
+    ;;;   (raise 'illegal-var-dereferencing)
+    ;;;   (field-value (get-box name current-type iclosure state)))))
+   (if (eq? -1 (field-index name current-type iclosure state))
+     (raise 'illegal-var-dereferencing)
+     (field-value (instance-field-values iclosure)
+                  (field-index name current-type iclosure state)))))
 
 (define field-update
-  (lambda (name current-type iclosure state new-val)
-    (if (null? (get-box name current-type iclosure state))
+  (lambda (name current-type ref iclosure state new-val)
+    ;;; (if (null? (get-box name current-type iclosure state))
+    ;;;   (raise 'illegal-var-assignment)
+    ;;;   (begin
+    ;;;    (set-box! (get-box name current-type iclosure state) new-val)
+    ;;;    state))))
+    (if (eq? -1 (field-index name current-type iclosure state))
       (raise 'illegal-var-assignment)
-      (begin
-       (set-box! (get-box name current-type iclosure state) new-val)
-       state))))
+      (state-set-binding ref
+                         (instance-closure
+                          (instance-true-type-name iclosure)
+                          (list-set (instance-field-values iclosure)
+                                    (field-index name current-type iclosure state)
+                                    new-val))
+                          ;;; (field-set (instance-field-values iclosure)
+                          ;;;            (field-index name current-type iclosure state)
+                          ;;;            new-val))
+                         state))))
 
-(define get-box
+(define field-index
  (lambda (name current-type iclosure state)
   (let* ([cclosure (state-lookup current-type state current-type)]
          [fields (class-instance-field-names cclosure)]
          [index (get-field-index name fields cclosure state -1 current-type)])
-   (if (eq? -1 index)
-     (null-value)
-     (list-ref (instance-field-values iclosure) index)))))
+    index)))
+   ;;; (if (eq? -1 index)
+   ;;;   (null-value)
+   ;;;   (list-ref (instance-field-values iclosure) index)))))
 
  ; Helper used in trick to determine which field value to select
 (define get-field-index
@@ -1016,7 +1100,20 @@
         (get-field-index name (cdr fields) cclosure state acc current-type)))))
 
 (define field-value
-  (lambda (fbox)
-    (if (null? (unbox fbox))
+  ;;; (lambda (fbox)
+    ;;; (if (null? (unbox fbox))
+    ;;;   (raise 'unset-instance-field)
+    ;;;   (unbox fbox))))
+  (lambda (fields index)
+    (if (null? (list-ref fields index))
       (raise 'unset-instance-field)
-      (unbox fbox))))
+      (list-ref fields index))))
+
+(define field-set
+ (lambda (fields index new-val)
+  (if (zero? index)
+    (cons new-val (cdr fields))
+    (cons (car fields)
+          (field-set (cdr fields)
+                     (- index 1)
+                     new-val)))))

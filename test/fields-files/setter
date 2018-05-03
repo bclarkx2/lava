@@ -1,0 +1,11 @@
+class A {
+    var x = 3;
+    function f () {
+        this.x = 4;
+    }
+    static function main () {
+        var a = new A();
+        a.f();
+        return a.x;
+    }
+}
