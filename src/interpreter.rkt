@@ -807,7 +807,9 @@
  (lambda (stmt s brk cont return throw current-type)
   (state-remove-layer
    (state (block-contents stmt) 
-          (state-add-layer s)
+          (state-instance-functions (block-contents stmt)
+                                    (state-add-layer s)
+                                    current-type)
           (lambda (v) (brk (state-remove-layer v)))
           (lambda (v) (cont (state-remove-layer v)))
           return 
