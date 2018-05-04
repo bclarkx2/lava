@@ -720,13 +720,15 @@
   (lambda (stmt s brk cont return throw current-type)
     (if (list? (varname stmt))
       (field-update (dot-member-part (varname stmt))
-                        current-type
-                        (dot-ref-part (varname stmt))
-                        (state-lookup (dot-ref-part (varname stmt))
-                                      s
-                                      current-type)
-                        s
-                        (value (varexpr stmt) s throw current-type))
+                    (instance-true-type-name (state-lookup (dot-ref-part (varname stmt))
+                                  s
+                                  current-type))
+                    (dot-ref-part (varname stmt))
+                    (state-lookup (dot-ref-part (varname stmt))
+                                  s
+                                  current-type)
+                    s
+                    (value (varexpr stmt) s throw current-type))
       (if (is-declared (varname stmt) s)
           (state-set-binding
            (varname stmt)

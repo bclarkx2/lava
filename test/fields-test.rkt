@@ -65,3 +65,7 @@
 (assert (test-interpret-class "fields-files/setter" "A")
         4
         "setter")
+
+(assert (test-interpret-class "fields-files/set-field-field" "A")
+        2
+        "set-field-fields")
