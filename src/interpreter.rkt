@@ -83,6 +83,10 @@
 ; Function calls
 (define value-func
  (lambda (closure this expr s throw current-type)
+  (begin
+   ;;; (print "Calling value-func")
+   ;;; (print expr)
+   ;;; (println "")
   (call/cc (lambda (return)
    (state-remove-layer
     (state (call-func-def closure)
@@ -97,11 +101,15 @@
            default-cont
            return
            (mk-safe-throw throw s)
-           (function-class closure s)))))))
+           (function-class closure s))))))))
 
 
 (define value-dot
-  (lambda (expr state throw current-type)
+  (lambda (expr state iclosure throw current-type)
+   (begin 
+    ;;; (print "calling value-dot: ")
+    ;;; (print expr)
+    ;;; (println "")
     (field-lookup (dot-member-part expr)
                   (cond 
                     ((eq? 'super (dot-ref-part expr))
@@ -110,13 +118,9 @@
                     ((eq? 'this (dot-ref-part expr))
                       current-type)
                     (else
-                      (instance-true-type-name
-                        (eval-reference expr
-                                        state
-                                        throw
-                                        current-type))))
-                  (eval-reference expr state throw current-type)
-                  state)))
+                      (instance-true-type-name iclosure)))
+                  iclosure
+                  state))))
 
 (define value-new
   (lambda (expr s current-type)
@@ -124,27 +128,39 @@
 
 (define value
   (lambda (e s throw current-type)
+    (begin
+     ;;; (print "calling value: ")
+     ;;; (print e)
+     ;;; (println "" ) 
     (let ([symbol? (lambda (sym) (eq? sym (operator e)))])
       (if (list? e)
         (cond
           ((null? (cdr e)) (value (car e) s throw current-type))
           ((int-operator? (operator e)) (value-int e s symbol? throw current-type))
           ((bool-operator? (operator e)) (value-bool e s symbol? throw current-type))
-          ((symbol? 'funcall) (value-func (method-lookup (funcall-methods e s throw current-type)
-                                                         (funcall-name e)
-                                                         s current-type)
-                                          (funcall-reference e s throw current-type)
-                                          e s throw current-type))
           ((symbol? '=) (operand2 e s throw current-type))
           ((symbol? 'new) (value-new e s current-type))
-          ((symbol? 'dot) (value-dot e s throw current-type))
+          ((symbol? 'funcall)
+           (let ([iclosure (funcall-reference e s throw current-type)])
+            (value-func (method-lookup (funcall-methods (funcall-ref e)
+                                                        s
+                                                        iclosure
+                                                        throw
+                                                        current-type)
+                                       (funcall-name e)
+                                       s current-type)
+                        iclosure
+                        e s throw current-type)))
+          ((symbol? 'dot)
+           (let ([iclosure (eval-reference e s throw current-type)])
+            (value-dot e s iclosure throw current-type)))
           (else e))
         (cond
           ((number? e) e)
           ((boolean? e) e)
           ((eq? 'true e) #t)
           ((eq? 'false e) #f)
-          (else (state-lookup e s current-type)))))))
+          (else (state-lookup e s current-type))))))))
 
 
 ;; Value helpers
@@ -210,41 +226,21 @@
 ;;; Method binding
 
 (define funcall-methods
- (lambda (expr state throw current-type)
-  (eval-methods (funcall-ref expr) state throw current-type)))
-
-(define eval-methods
-  (lambda (ref-part state throw current-type)
+  (lambda (ref-part s iclosure throw current-type)
     (cond 
       ((has-implicit-this? ref-part)
-       (method-hierarchy (instance-true-type
-                          (state-lookup 'this state current-type)
-                          state
-                          current-type)
-                         state
-                         current-type))
+       (method-hierarchy (instance-true-type iclosure s current-type)
+                         s current-type))
       ((another-reference-layer? ref-part)
-       (method-hierarchy  (instance-true-type
-                           (value (dot-ref-part ref-part) state throw current-type)
-                           state
-                           current-type)
-                          state
-                          current-type))
+       (method-hierarchy  (instance-true-type iclosure s current-type)
+                          s current-type))
       ((eq? (dot-ref-part ref-part) 'super)
        (state-remaining
-        (method-hierarchy  (state-lookup
-                            current-type
-                            state
-                            current-type)
-                           state
-                           current-type)))
+        (method-hierarchy (instance-true-type iclosure s current-type)
+                          s current-type)))
       (else
-       (method-hierarchy (instance-true-type
-                          (state-lookup (dot-ref-part ref-part) state current-type)
-                          state
-                          current-type)
-                         state
-                         current-type)))))
+       (method-hierarchy (instance-true-type iclosure s current-type)
+                         s current-type)))))
 
 ; (funcall expr, state) -> instance closure
 (define funcall-reference
@@ -260,7 +256,11 @@
 
 ; (ref expr) -> instance closure
 (define eval-reference
-  (lambda (ref-part state throw current-type)
+  (lambda (ref-part state throw current-type) 
+    (begin
+      ;;; (print "calling eval-reference: ")
+      ;;; (print ref-part)
+      ;;; (println "")
     (cond 
       ((has-implicit-this? ref-part)
         (state-lookup 'this state current-type))
@@ -269,7 +269,7 @@
       ((eq? (dot-ref-part ref-part) 'super)
        (state-lookup 'this state current-type))
       (else
-        (state-lookup (dot-ref-part ref-part) state current-type)))))
+        (state-lookup (dot-ref-part ref-part) state current-type))))))
 
 (define has-implicit-this?
  (lambda (ref-part)
@@ -641,6 +641,11 @@
 
 (define state
   (lambda (stmt s brk cont return throw current-type)
+   (begin
+     ;;; (print "calling state: ")
+     ;;; (print stmt)
+     ;;; (println "")
+
     (cond
 
       ; null and return statements do not alter state
@@ -677,7 +682,7 @@
                          s brk cont return throw current-type)
                   brk cont return throw current-type)))
       
-      (else s))))
+      (else s)))))
 
 (define keyword
   (lambda (stmt) (car stmt)))

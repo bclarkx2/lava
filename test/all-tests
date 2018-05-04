@@ -4,7 +4,6 @@ find .                          \
      -type f                    \
      -name '*.rkt'              \
      ! -name 'common.rkt'       \
-     ! -name 'harness.rkt'      \
      -exec raco test            \
                 --heartbeat     \
                 --table         \

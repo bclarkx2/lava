@@ -34,3 +34,7 @@
 (assert (test-interpret-class "chaining/throw-in-different-class" "A")
         3
         "throw-in-different-class")
+
+(assert (test-interpret-class "chaining/side-effect" "A")
+        1
+        "side-effect")
