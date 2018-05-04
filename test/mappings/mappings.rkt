@@ -4,7 +4,7 @@
 ;;; requirements
 (require xrepl)
 (require racket/trace)
-(require rackunit "../src/interpreter.rkt")
+(require rackunit "../../src/interpreter.rkt")
 
 
 ;; keyword
