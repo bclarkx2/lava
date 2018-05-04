@@ -17,3 +17,11 @@
 (assert (test-interpret-class "this-nested" "A")
         4
         "this-nested")
+
+(assert (test-interpret-class "this-side-effect" "A")
+        3
+        "this-side-effect")
+
+(assert (test-interpret-class "this-side-eff-no-ret" "A")
+        8
+        "this-side-eff-no-ret")

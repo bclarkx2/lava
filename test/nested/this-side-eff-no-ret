@@ -1,0 +1,14 @@
+class A {
+    var x = 0;
+    function outer() {
+        function inner() {
+            this.x = 8;
+        }
+        inner();
+    }
+    static function main() {
+        var a = new A();
+        a.outer();
+        return a.x;
+    }
+}
