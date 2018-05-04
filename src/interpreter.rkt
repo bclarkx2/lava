@@ -89,7 +89,7 @@
            (state-instance-functions (call-func-def closure)
                                      (new-func-env closure this
                                                            expr
-                                                           s
+                                                           s  
                                                            throw
                                                            current-type)
                                      current-type)
@@ -103,10 +103,18 @@
 (define value-dot
   (lambda (expr state throw current-type)
     (field-lookup (dot-member-part expr)
-                  (if (eq? 'super (dot-ref-part expr))
-                    (class-parent-name
-                     (state-lookup current-type state current-type))
-                    current-type)
+                  (cond 
+                    ((eq? 'super (dot-ref-part expr))
+                      (class-parent-name
+                        (state-lookup current-type state current-type)))
+                    ((eq? 'this (dot-ref-part expr))
+                      current-type)
+                    (else
+                      (instance-true-type-name
+                        (eval-reference expr
+                                        state
+                                        throw
+                                        current-type))))
                   (eval-reference expr state throw current-type)
                   state)))
 
@@ -696,12 +704,15 @@
   (lambda (stmt s brk cont return throw current-type)
     (if (list? (varname stmt))
       (field-update (dot-member-part (varname stmt))
-                        current-type
-                        (state-lookup (dot-ref-part (varname stmt))
-                                      s
-                                      current-type)
-                        s
-                        (value (varexpr stmt) s throw current-type))
+                    (instance-true-type-name
+                      (state-lookup (dot-ref-part (varname stmt))
+                                    s
+                                    current-type))
+                    (state-lookup (dot-ref-part (varname stmt))
+                                  s
+                                  current-type)
+                    s
+                    (value (varexpr stmt) s throw current-type))
       (if (is-declared (varname stmt) s)
           (state-set-binding
            (varname stmt)

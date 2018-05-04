@@ -1,0 +1,17 @@
+class B {
+    var y = 0;
+}
+class A {
+    var b = new B();
+    function f() {
+        b.y = 1;
+    }
+    function get_b() {
+        return b;
+    }
+    static function main() {
+        var a = new A();
+        a.f();
+        return a.get_b().y;
+    }
+}
