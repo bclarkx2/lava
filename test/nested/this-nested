@@ -1,0 +1,16 @@
+class A {
+    var x = 2;
+    function f() {
+        var temp_this = this;
+
+        function inner() {
+            return temp_this.x + this.x;
+        }
+
+        return inner();
+    }
+    static function main() {
+        var a = new A();
+        return a.f();
+    }
+}

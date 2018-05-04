@@ -228,6 +228,8 @@
 (define funcall-methods
   (lambda (ref-part s iclosure throw current-type)
     (cond 
+      ((is-declared ref-part s)
+       s)
       ((has-implicit-this? ref-part)
        (method-hierarchy (instance-true-type iclosure s current-type)
                          s current-type))

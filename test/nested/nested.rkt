@@ -10,4 +10,10 @@
 
 ;;; tests
 
-(assert 2 2 "nice")
+(assert (test-interpret-class "another-class-field-nested" "A")
+        7
+        "another-class-field-nested")
+
+(assert (test-interpret-class "this-nested" "A")
+        4
+        "this-nested")

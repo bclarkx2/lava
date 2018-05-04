@@ -1,0 +1,17 @@
+class B {
+    var x = 7;
+}
+class A {
+    var x = 9;
+    function outer() {
+        var b = new B();
+        function inner() {
+            return b.x;
+        }
+        return inner();
+    }
+    static function main() {
+        var a = new A();
+        return a.outer();
+    }
+}
