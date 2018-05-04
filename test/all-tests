@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-# find .                          \
-#      -type f                    \
-#      -name '*.rkt'              \
-#      ! -name 'common.rkt'       \
-#      -exec raco test            \
-#                 --heartbeat     \
-#                 --table         \
-#                 {} +
-
-
 find -mindepth 2                \
      -maxdepth 2                \
      -type f                    \
