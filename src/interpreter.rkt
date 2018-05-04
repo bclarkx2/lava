@@ -236,8 +236,8 @@
                           s current-type))
       ((eq? (dot-ref-part ref-part) 'super)
        (state-remaining
-        (method-hierarchy (instance-true-type iclosure s current-type)
-                          s current-type)))
+          (method-hierarchy (state-lookup current-type s current-type)
+                            s current-type)))
       (else
        (method-hierarchy (instance-true-type iclosure s current-type)
                          s current-type)))))
