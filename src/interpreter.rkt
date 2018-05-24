@@ -901,17 +901,12 @@
 (define mk-environment-func
   (lambda (s)
     (lambda (call-state)
-      (subenvironment (layer-count s) (reverse call-state)))))
+      (subenvironment (layer-count s) call-state))))
 
 (define subenvironment
   (lambda (num-layers s)
-    (cond
-      ((eq? 1 num-layers) (cons (top-layer s) '()))
-      ((equal? (state-empty) s) (raise 'Illegal-call))
-      (else 
-       (cons (top-layer s)
-             (subenvironment (- num-layers 1)
-                             (cdr s)))))))
+    (drop s (- (length s) num-layers))))
+
 
 (define mk-class-func
  (lambda (s current-type)
