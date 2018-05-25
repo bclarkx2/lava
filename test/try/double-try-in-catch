@@ -1,0 +1,48 @@
+class A {
+
+    var a = 0;
+    var b = 0;
+    var c = 0;
+
+    function f() {
+        try {
+            throw 4;
+        }
+        catch(e) {
+            return g();
+        }
+        finally {
+            a = 100;
+        }
+    }
+
+    function g() {
+        try {
+            throw 5;
+        }
+        catch(j) {
+            return h();
+        }
+        finally {
+            b = 1000;
+        }
+    }
+
+    function h() {
+        try {
+            throw 9;
+        }
+        catch(w) {
+            return 2;
+        }
+        finally {
+            c = 10000;
+        }
+    }
+
+    static function main() {
+        var a = new A();
+        a.f();
+        return a.a + a.b + a.c;
+    }
+}

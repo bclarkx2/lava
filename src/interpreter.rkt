@@ -99,7 +99,7 @@
                                      current-type)
            default-brk
            default-cont
-           return
+           (lambda (s retval) (return retval))
            (mk-safe-throw throw s)
            (function-class closure s))))))))
 
@@ -576,7 +576,7 @@
 (define default-brk (lambda (x) (raise 'illegal-break)))
 (define default-cont (lambda (x) (raise 'illegal-cont)))
 (define default-throw (lambda (x y) (raise 'illegal-throw)))
-(define default-return (lambda (x) (raise 'illegal-return)))
+(define default-return (lambda (x y) (raise 'illegal-return)))
 (define default-this (lambda () 'no-this))
 (define is-default-this? (lambda (x) (equal? x (default-this))))
 (define default-current-type (lambda () 'no-current-type))
@@ -653,7 +653,7 @@
       ; null and return statements do not alter state
       ((null? stmt) s)
       ((not (list? stmt)) s)
-      ((eq? (keyword stmt) 'return) (return (value (cdr stmt) s throw current-type)))
+      ((eq? (keyword stmt) 'return) (return s (value (cdr stmt) s throw current-type)))
 
       ; may be a list of statements
       ((list? (keyword stmt)) (state-list stmt s brk cont return throw current-type))
@@ -824,19 +824,54 @@
 
 (define state-try
   (lambda (stmt s brk cont return throw current-type)
-    (state (finally stmt)
-           (call/cc (lambda (try-state)
-                      (state (try stmt)
-                             s
-                             (break-that-does-finally stmt brk cont return throw current-type) cont return
-                             (throw-that-does-catch stmt
-                                                    try-state
-                                                    (break-that-does-finally stmt brk cont return throw current-type)
-                                                    cont
-                                                    return
-                                                    throw
-                                                    current-type) current-type)))
-           brk cont return throw current-type)))
+    (letrec ([finally-brk (break-that-does-finally stmt
+                                                   brk cont return throw
+                                                   current-type)]
+             [finally-cont (continue-that-does-finally stmt
+                                                       brk cont return throw
+                                                       current-type)]
+             [finally-return (return-that-does-finally stmt
+                                                       brk cont
+                                                       return
+                                                       throw
+                                                       current-type)]
+             [catch-throw (throw-that-does-finally stmt
+                                                   brk cont
+                                                   return
+                                                   throw
+                                                   current-type)]
+             [finally-throw (throw-catch-finally stmt
+                                                 finally-brk
+                                                 finally-cont
+                                                 finally-return
+                                                 throw
+                                                 current-type
+                                                 catch-throw)])
+      (call/cc (lambda (finally-state-asker)
+        (state (finally stmt)
+               (state (try stmt)
+                      s
+                      finally-brk
+                      finally-cont
+                      finally-return
+                      (finally-throw finally-state-asker)
+                      current-type)
+               brk cont return throw current-type))))))
+
+(define throw-catch-finally
+  (lambda (stmt brk cont return throw current-type catch-throw)
+    (lambda (finally-state-asker)
+      (lambda (throwstate throwval)
+        (finally-state-asker
+          (state (finally stmt)
+                 (state (block-form-of-catch stmt throwval)
+                        throwstate
+                        brk cont
+                        return
+                        catch-throw
+                        current-type)
+                 brk cont return throw current-type))))))
+  
 
 (define break-that-does-finally
   (lambda (stmt brk cont return throw current-type)
@@ -846,13 +881,31 @@
                   brk cont return throw
                   current-type)))))
 
-(define throw-that-does-catch
- (lambda (stmt result-state brk cont return throw current-type)
-  (lambda (aborted-throw-state throw-val)
-   (result-state
-      (state (block-form-of-catch stmt throw-val)
-             aborted-throw-state
-             brk cont return throw current-type)))))
+(define continue-that-does-finally
+  (lambda (stmt brk cont return throw current-type)
+    (lambda (cont-state)
+      (cont (state (finally stmt)
+                   cont-state 
+                   brk cont return throw
+                   current-type)))))
+
+(define return-that-does-finally
+ (lambda (stmt brk cont return throw current-type)
+  (lambda (retstate retval)
+   (begin
+    (state (finally stmt)
+           retstate
+           brk cont return throw
+           current-type)
+    (return retstate retval)))))
+
+(define throw-that-does-finally
+ (lambda (stmt brk cont return throw current-type)
+  (lambda (throwstate throwval)
+   (throw (state (finally stmt)
+                 throwstate
+                 brk cont return throw current-type)
+          throwval))))
 
 (define block-form-of-catch
   (lambda (stmt throw-val)

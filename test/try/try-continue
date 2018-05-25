@@ -1,0 +1,22 @@
+class A {
+
+    function f() {
+        var x = 4;
+        var count = 0;
+        while (x > 0){
+            try{
+                x = x - 1;
+                continue;
+            }
+            finally{
+                count = count + 1;
+            }
+        }
+        return count;
+    }
+
+    static function main() {
+        var a = new A();
+        return a.f();
+    }
+}
