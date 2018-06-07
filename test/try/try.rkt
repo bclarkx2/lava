@@ -26,3 +26,15 @@
 (assert (test-interpret-class "double-try-in-catch" "A")
         11100
         "double-try-in-catch")
+
+(assert (test-interpret-class "catch-return-with-finally" "A")
+        6
+        "catch-return-with-finally")
+
+(assert (test-interpret-class "throw-in-finally" "A")
+        1111
+        "throw-in-finally")
+
+(assert (test-interpret-class "nested-try" "A")
+        111111
+        "nested-try")

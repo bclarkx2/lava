@@ -1,0 +1,28 @@
+class A {
+    var x = 1;
+    function f() {
+        try{
+            x = x + 10;
+            throw 10;
+        }
+        catch(e) {
+            x = x + 100;
+        }
+        finally {
+            return g();
+        }
+    }
+    function g() {
+        x = x + 1000;
+        throw x;
+    }
+    static function main() {
+        var a = new A();
+        try {
+            a.f();
+        }
+        catch(e) {
+            return e;
+        }
+    }
+}
