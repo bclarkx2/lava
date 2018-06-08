@@ -28,7 +28,7 @@
         "double-try-in-catch")
 
 (assert (test-interpret-class "catch-return-with-finally" "A")
-        6
+        11
         "catch-return-with-finally")
 
 (assert (test-interpret-class "throw-in-finally" "A")
