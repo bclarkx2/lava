@@ -38,3 +38,7 @@
 (assert (test-interpret-class "nested-try" "A")
         111111
         "nested-try")
+
+(assert (test-interpret-class "double-return-in-try" "A")
+        1111
+        "double-return-in-try")
