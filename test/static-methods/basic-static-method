@@ -1,0 +1,10 @@
+class A {
+    
+    static function f() {
+        return 3;
+    }
+
+    static function main() {
+        return A.f();
+    }
+}
